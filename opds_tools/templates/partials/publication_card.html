@@ -1,0 +1,232 @@
+{% import 'macros.html' as macros %}
+
+<div class="col py-2"> <!-- images Card-->
+  <div class="card h-100 shadow-sm">
+    <div class="row g-0">
+
+      <!-- Image Column -->
+      <div class="col-md-3 d-flex flex-column bg-white border-end py-4">
+        <div class="d-flex justify-content-between align-items-center px-3 pb-2">
+          <div class="card-title h5 text-dark text-uppercase">
+            <i class="bi bi-image me-2"></i> Images
+          </div>
+          <a href="https://drafts.opds.io/opds-2.0.html#23-images" target="_blank" rel="noopener noreferrer"
+            class="small text-decoration-underline text-end">
+            <i class="bi bi-link-45deg"></i> Spec
+          </a>
+        </div>
+        <hr class="mt-0 mb-4 mx-3">
+        <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center px-3">
+          {% if item.image %}
+            <img src="{{ item.image.href }}" class="img-fluid rounded shadow-sm mb-2"
+                 style="max-height: 200px;" alt="Book cover for {{ item.title }}">
+            <ul class="list-unstyled small text-muted mb-0">
+              {% if item.image.type %}<li><strong>Type:</strong> {{ item.image.type }}</li>{% endif %}
+              {% if item.image.width %}<li><strong>Width:</strong> {{ item.image.width }}</li>{% endif %}
+              {% if item.image.height %}<li><strong>Height:</strong> {{ item.image.height }}</li>{% endif %}
+            </ul>
+          {% else %}
+            <div class="text-muted">
+              <i class="fas fa-image fa-2x mb-2"></i><br>
+              <span class="fst-italic">No image available</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Metadata Column -->
+
+              <div class="col-md-9 py-4 "><!-- Publication Begin Metadata : begin col-->
+                <div class="d-flex justify-content-between align-items-center px-3 pb-2">
+                  <div class="card-title h5 text-dark text-uppercase">
+                    <i class="bi bi-journal me-2"></i> Publication Metadata
+                  </div>
+                  <a href="https://drafts.opds.io/opds-2.0#52-metadata" target="_blank" rel="noopener noreferrer"
+                    class="small text-decoration-underline text-end">
+                    <i class="bi bi-link-45deg"></i> Spec
+                  </a>
+                </div>
+
+                <hr class="mt-0 mb-4 mx-3">
+
+                <!-- Begin Mandarory Section -->
+                <h6 class="text-danger mb-3 text-uppercase pt-4"> <i class="bi bi-clipboard-check me-2"></i> Mandatory Metadata for Palace </h6>
+                <hr class="mt-3 mb-4">
+                <div class="m-4 g-3">
+
+                {% if item.self_href %}
+                <h5 class="card-title">Title: 
+                    <a href="{{ item.self_href }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                    {{ item.title }}
+                    <span class="ms-2" title="View raw OPDS JSON">
+                        <i class="bi bi-filetype-json"></i>
+                    </span>
+                    </a>
+                </h5>
+                <p class="card-text"><strong>Self Link: </strong>{{ item.self_href }}</p>
+                {% else %}
+                <h5 class="card-title text-muted">{{ item.title }}</h5>
+                <p class="text-danger">Missing a self link</p>
+                {% endif %}
+                
+                  {% if item.subtitle and item.subtitle != "None" %}<h6 class="card-subtitle mb-2 text-muted">{{ item.subtitle }}</h6>{% endif %}
+                  {% if item.identifier %}<p class="card-text"><strong>Identifier:</strong> {{ item.identifier }}</p>{% endif %}
+                  <strong>Publication Type: </strong>{% if item.publication_type %}<p class="card-text">{{ render_schema_type_badge(item.publication_type) }}</p>{% endif %}
+                  <p class="card-text"><strong>Author:</strong> {{ item.author }}</p>
+                  <p class="card-text"><strong>Language:</strong> {{ item.language }}</p>
+                
+                <!-- Collapsible Buttons Mandatory-->
+                <div class="d-flex flex-wrap gap-2">
+                    {% if item.subjects %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#sub-{{ loop.index }}">Subjects</button>
+                    {% else %}
+                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#sub-{{ index }}">Missing Subjects</button>
+                    {% endif %}
+                    {% if item.acquisition_links %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#acq-{{ loop.index }}">Acq Links</button>
+                    {% else %}
+                    <button class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#acq-{{ index }}">Missing Acqisition Link</button>
+                    {% endif %}
+
+                </div>
+                <div class="mt-3">
+                    {% if item.subjects %}
+                      <div class="collapse" id="sub-{{ loop.index }}">
+                        <h6 class="text-primary mb-2">Subjects</h6>
+                        <div class="card card-body bg-light">
+                          <ul class="mb-2">
+                            {% for subject in item.subjects %}
+                              <li>{{ subject.name if subject is mapping else subject }}</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if item.acquisition_links %}
+                    {% import 'macros.html' as macros %}
+                      <div class="collapse" id="acq-{{ index }}">
+                        <h6 class="text-primary mb-2">Acquisition Links</h6>
+                        <div class="text-end"><a href="https://minotaur.dev.palaceproject.io"></a></div>
+                        <div class="card card-body bg-light">
+                            {{ macros.render_links_list(item.acquisition_links) }}
+                        </div>
+                      </div>
+                    {% endif %}
+
+
+                </div> <!-- end Mandatory Section -->
+                </div>
+                <!-- Begin Recommended Section -->
+                <h6 class="text-success mb-3 text-uppercase pt-4"> <i class="bi bi-clipboard-check me-2"></i> Recommended Information </h6>
+                <hr class="mt-3 mb-4">
+                <div class="m-4 g-3">
+
+                  <p class="card-text"><strong>Publisher:</strong>{{ macros.render_publisher_links(item.publisher, item.publisher_links) }}</p>
+                  <p class="card-text"><strong>Published:</strong> {{ item.published }}</p>
+                  <p class="card-text"><strong>License:</strong> {{ item.license }}</p>
+                  {% if item.series %}<p class="card-text text-danger"> The {{ item.series }} Series should be in BelongsTo Collection.</p>{% endif %}
+                  <p class="card-text"><strong>Intended Audience:</strong> {{item.audience }}</p>
+
+                  <div class="d-flex flex-wrap gap-2">
+                    {% if item.description %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#desc-{{ index }}">Description</button>{% endif %}
+                    {% if item.alt_identifier %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#alt_id-{{ index }}">Alt IDs</button>{% endif %}
+                    {% if item.accessibility %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#acc-{{ index }}">Accessibility</button>{% endif %}
+                    {% if item.belongs_to %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#be_to-{{ index }}">BelongsTo</button>{% endif %}
+                    {% if item.contains %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#contains-{{ index }}">Contains</button>{% endif %}
+                    {% if item.groups %}<button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#contains-{{ index }}">Groups</button>{% endif %}
+                  </div>
+
+                  <div class="mt-3">
+                    {% if item.description %}
+                      <div class="collapse" id="desc-{{ index }}">
+                        <h6 class="text-primary mb-2">Description</h6>
+                        <div class="card card-body bg-light">{{ item.description | safe }}</div>
+                      </div>
+                    {% endif %}
+
+                    {% if item.subjects %}
+                      <div class="collapse" id="sub-{{ index }}">
+                        <h6 class="text-primary mb-2">Subjects</h6>
+                        <div class="card card-body bg-light">
+                          <ul class="mb-0">
+                            {% for subject in item.subjects %}
+                              <li>{{ subject.name if subject is mapping else subject }}</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if item.alt_identifier %}
+                      <div class="collapse" id="alt_id-{{ index }}">
+                        <h6 class="text-primary mb-2">Alternative IDs</h6>
+                        <div class="card card-body bg-light">
+                          {{ macros.render_alt_identifier_badges(item.alt_identifier) }}
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    <div class="collapse" id="acc-{{ index }}">
+                    <h6 class="text-primary mb-2">Accessibility Information</h6>
+                    <div class="card card-body bg-light">
+                        {% if item.accessibility and item.accessibility|length > 0 %}
+                        <ul>
+                            {% for key, value in item.accessibility.items() if value %}
+                            <li>
+                                <strong>{{ key | replace('_', ' ') | title }}:</strong>
+                                {{ value if value is string else value | join(', ') }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <span class="fst-italic text-muted">Unknown</span>
+                        {% endif %}
+                    </div>
+                    </div>
+
+
+                    {% if item.belongs_to %}
+                      <div class="collapse" id="be_to-{{ index }}">
+                        <h6 class="text-primary mb-2">Belongs To</h6>
+                        <div class="card card-body bg-light">
+                          <ul>
+                            {% for entry in item.belongs_to %}
+                              <li><strong>{{ entry.label }}:</strong> {{ entry.name }}{% if entry.url %} (<a href="{{ entry.url }}">link</a>){% endif %}</li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      </div>
+                    {% endif %}
+
+
+                    {% if groups %}
+                      <div class="collapse" id="be_to-{{ index }}">
+                        <h6 class="text-primary mb-2">>Groups</h6>
+                        <div class="card card-body bg-light">
+                            {{ macros.render_opds_groups(groups) }}
+                        </div>
+                      </div>
+                    {% endif %}
+
+                    {% if item.contains %}
+                      <div class="collapse" id="contains-{{ index }}">
+                        <h6 class="text-primary mb-2">>Contained Articles</h6>
+                        <div class="card card-body bg-light">
+                          <ul class="list-group">
+                            {% for article in item.contains %}
+                              <li class="list-group-item">
+                                {% if article.image %}<img src="{{ article.image }}" class="me-2" style="width: 30px;">{% endif %}
+                                {% if article.href %}<a href="{{ article.href }}" class="text-decoration-none">{{ article.title }}</a>{% else %}<span>{{ article.title }}</span>{% endif %}
+                              </li>
+                            {% endfor %}
+                          </ul>
+                        </div>
+                      </div>
+                    {% endif %}
+
+                  </div> <!-- End collapsibles -->
+                </div><!-- End Optionals -->
+                </div>
+
+    </div>
+  </div>
+</div>

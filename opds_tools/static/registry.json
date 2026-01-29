@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "title": "OA Repositories"
+  },
+  "catalogs": [
+    {
+      "metadata": {
+        "title": "OAPEN Catalog"
+      },
+      "links": [
+        {
+          "rel": "http://opds-spec.org/catalog",
+          "href": "/static/oapen.json",
+          "type": "application/opds+json"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "title": "FULCRUM Catalog (UMP)"
+      },
+      "links": [
+        {
+          "rel": "http://opds-spec.org/catalog",
+          "href": "https://www.fulcrum.org/api/opds",
+          "type": "application/opds+json"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "title": "Open Research Library"
+      },
+      "links": [
+        {
+          "rel": "http://opds-spec.org/catalog",
+          "href": "Https://catalog.openresearchlibrary.org/opds/v2/modules",
+          "type": "application/opds+json"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "title": "Palace Bookshelf"
+      },
+      "links": [
+        {
+          "rel": "http://opds-spec.org/catalog",
+          "href": "https://palace-bookshelf-opds2.dp.la/v1/publications?page=1&limit=100",
+          "type": "application/opds+json"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "title": "Press Books",
+        "description": "OPDS 2 version of PressBooks feed under development"
+      },
+      "links": [
+        {
+          "rel": "http://opds-spec.org/catalog",
+          "href": "https://v2dev.pressbooks.directory/opds?v=2.0",
+          "type": "application/opds+json"
+        }
+      ]
+    }
+  ]
+}

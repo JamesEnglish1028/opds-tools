@@ -1,0 +1,510 @@
+{# templates/macros.html — Jinja macros for badge rendering #}
+
+{# -------- Make Publication Titles Links to self-------- #}
+{% macro linked_title(title, self_href=None) -%}
+  {% if self_href %}
+    <a href="{{ self_href }}" target="_blank" rel="noopener noreferrer"> View Publication Object for {{ title }}</a>
+  {% else %}
+    {{ title }}
+  {% endif %}
+{%- endmacro %}
+
+
+
+
+{# -------- Badge Class for Alternate Identifiers -------- #}
+{% macro badge_class(type) -%}
+  {% if type == 'ISBN' %}
+    bg-primary
+  {% elif type == 'DOI' %}
+    bg-info
+  {% elif type == 'OCLC' %}
+    bg-success
+  {% elif type == 'ISSN' %}
+    bg-warning text-dark
+  {% elif type == 'Handle' %}
+    bg-secondary
+  {% elif type == 'ARK' %}
+    bg-dark
+  {% elif type == 'ProQuest' %}
+    bg-light text-dark
+  {% else %}
+    bg-danger
+  {% endif %}
+{%- endmacro %}
+
+{% macro render_alt_identifier_badges(alt_identifiers) %}
+  {% for alt in alt_identifiers %}
+    <a href="{{ alt.url or '#' }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none me-2">
+      <span class="badge {{ badge_class(alt.type) }}">
+        {{ alt.type }}: {{ alt.value }}
+      </span>
+    </a>
+  {% endfor %}
+{% endmacro %}
+
+
+{# -------- Badge Class for Acquisition Link rels -------- #}
+
+{% macro acquisition_badge_class(rel) -%}
+  {% if rel == 'http://opds-spec.org/acquisition' %}
+    bg-primary
+  {% elif rel == 'http://opds-spec.org/acquisition/borrow' %}
+    bg-success
+  {% elif rel == 'http://opds-spec.org/acquisition/buy' %}
+    bg-warning text-dark
+  {% elif rel == 'http://opds-spec.org/acquisition/sample' %}
+    bg-info
+  {% elif rel == 'http://opds-spec.org/acquisition/open-access' %}
+    bg-dark
+  {% elif rel == 'self' %}
+    bg-secondary
+  {% else %}
+    bg-danger
+  {% endif %}
+{%- endmacro %}
+
+{% macro file_icon(filetype) %}
+  {% if "json" in filetype %}
+    <i class="fas fa-file-code fa-lg text-primary me-2"></i>
+  {% elif "html" in filetype %}
+    <i class="fas fa-file-alt fa-lg text-danger me-2"></i>
+  {% elif "xml" in filetype %}
+    <i class="fas fa-file-code fa-lg text-warning me-2"></i>
+  {% elif "pdf" in filetype %}
+    <i class="fas fa-file-pdf fa-lg text-danger me-2"></i>
+  {% elif "epub" in filetype %}
+    <i class="fas fa-book fa-lg text-success me-2"></i>
+  {% elif "zip" in filetype %}
+    <i class="fas fa-file-archive fa-lg text-muted me-2"></i>
+  {% else %}
+    <i class="fas fa-link fa-lg text-secondary me-2"></i>
+  {% endif %}
+{% endmacro %}
+
+{% macro render_grouped_acquisition_links(links) %}
+  {% set grouped = {} %}
+  {% for link in links %}
+    {% set rel = link.rel or 'other' %}
+    {% if rel not in grouped %}
+      {% set _ = grouped.update({rel: []}) %}
+    {% endif %}
+    {% set _ = grouped[rel].append(link) %}
+  {% endfor %}
+
+  {% for rel, group in grouped.items() %}
+    <div class="mb-3">
+      <h6 class="text-muted">{{ rel.split('/')[-1]|replace('-', ' ')|title }}</h6>
+      <ul class="list-unstyled ms-3">
+        {% for link in group %}
+          <li class="mb-2">
+            {{ macros.file_icon(link.type or '') }}
+            <a href="#"
+               class="opds-preview-link fw-semibold text-decoration-none me-2"
+               data-url="{{ link.href }}"
+               data-rel="{{ rel }}"
+               title="Preview {{ link.type }}">
+              {{ rel }}
+            </a>
+            <small class="text-muted">{{ link.type }}</small>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+{% endmacro %}
+
+
+
+{# -------- Badge Class for File Types -------- #}
+{% macro filetype_badge_class(mime_type) -%}
+  {% if mime_type == 'application/epub+zip' %}
+    bg-success
+  {% elif mime_type == 'application/pdf' %}
+    bg-danger
+  {% elif mime_type == 'text/html' %}
+    bg-primary
+  {% elif mime_type == 'application/audiobook+json' %}
+    bg-warning text-dark
+  {% elif mime_type == 'application/json' %}
+    bg-info
+  {% else %}
+    bg-secondary
+  {% endif %}
+{%- endmacro %}
+
+{% macro render_filetype_badge(mime_type) %}
+  {% if mime_type %}
+    <span class="badge {{ filetype_badge_class(mime_type) }}">
+      {{ mime_type }}
+    </span>
+  {% endif %}
+{% endmacro %}
+
+
+
+{# -------- Color-coded Badge Class and Icon for Schema.org Types -------- #}
+{% macro schema_type_badge_class(label) -%}
+  {% set label = label.lower() %}
+  {% if label == 'ebook' %}
+    bg-success
+  {% elif label == 'audiobook' %}
+    bg-warning text-dark
+  {% elif label == 'periodical' or label == 'journal' %}
+    bg-primary
+  {% elif label == 'comicstory' %}
+    bg-danger
+  {% elif label == 'photograph' %}
+    bg-dark
+  {% elif label == 'digitaldocument' %}
+    bg-info
+  {% elif label == 'videoobject' %}
+    bg-secondary
+  {% elif label == 'map' %}
+    bg-light text-dark
+  {% else %}
+    bg-secondary
+  {% endif %}
+{%- endmacro %}
+
+{% macro schema_type_icon(label) -%}
+  {% set label = label.lower() %}
+  {% if label == 'book' %}
+    <i class="fa fa-book"></i>
+  {% elif label == 'audiobook' %}
+    <i class="fas fa-headphones"></i>
+  {% elif label == 'periodical' or label == 'journal' %}
+    <i class="fas fa-newspaper"></i>
+  {% elif label == 'comicstory' %}
+    <i class="fas fa-book-open"></i>
+  {% elif label == 'photograph' %}
+    <i class="fas fa-camera-retro"></i>
+  {% elif label == 'digitaldocument' %}
+    <i class="fas fa-file-code"></i>
+  {% elif label == 'videoobject' %}
+    <i class="fas fa-video"></i>
+  {% elif label == 'map' %}
+    <i class="fas fa-map"></i>
+  {% else %}
+    <i class="fas fa-file-alt"></i>
+  {% endif %}
+{%- endmacro %}
+
+{% macro render_schema_type_badge(schema_type) %}
+  {% if schema_type %}
+    {% set label = schema_type.rsplit('/', 1)[-1] %}
+    <span class="badge {{ schema_type_badge_class(label) }}" title="{{ schema_type }}">
+      {{ schema_type_icon(label)|safe }} {{ label }}
+    </span>
+  {% endif %}
+{% endmacro %}
+
+
+{% macro file_icon(type) %}
+  {% set icon_class = {
+    'application/epub+zip': 'fas fa-book',
+    'application/pdf': 'fas fa-file-pdf',
+    'application/json': 'fas fa-code',
+    'application/xml': 'fas fa-file-code',
+    'text/html': 'fas fa-globe',
+    'default': 'fas fa-file'
+  } %}
+  <i class="{{ icon_class.get(type, icon_class['default']) }} fa-lg me-2 text-secondary" title="{{ type }}"></i>
+{% endmacro %}
+
+{% macro type_icon(type) -%}
+  {% if 'html' in type %}
+    <i class="bi bi-filetype-html text-primary fs-5 me-2" title="{{ type }}"></i>
+  {% elif 'opds+json' in type or 'json' in type %}
+    <i class="bi bi-filetype-json text-success fs-5 me-2" title="{{ type }}"></i>
+  {% elif 'xml' in type %}
+    <i class="bi bi-filetype-xml text-warning fs-5 me-2" title="{{ type }}"></i>
+  {% elif 'epub' in type %}
+    <i class="bi bi-file-zip text-info fs-5 me-2" title="{{ type }}"></i>
+  {% elif 'pdf' in type %}
+    <i class="bi bi-filetype-pdf text-danger fs-5 me-2" title="{{ type }}"></i>
+  {% else %}
+    <i class="bi bi-file-earmark text-secondary fs-5 me-2" title="{{ type }}"></i>
+  {% endif %}
+{%- endmacro %}
+
+{# ---- Publisher Link Macro Using type_icon() ---- #}
+{% macro render_publisher_links(publisher, publisher_links) %}
+  {% if publisher_links and publisher_links | length > 0 %}
+    {% for link in publisher_links %}
+      <span class="me-2">
+        <a href="{{ link.href }}" target="_blank" class="text-decoration-none">
+          {{ publisher }}
+        </a>
+        {{ type_icon(link.type) }}
+      </span>
+    {% endfor %}
+  {% else %}
+    <span class="text-muted">{{ publisher }}</span>
+  {% endif %}
+{% endmacro %}
+
+
+
+{# -------- Acquisition Links as a List with Badges -------- #}
+{% macro render_links_list(links) %}
+  <ul class="list-group list-group-flush small">
+    {% for link in links %}
+      <li class="list-group-item d-flex justify-content-between align-items-start">
+        <span class="ms-3">
+          {{ type_icon(link.type) }}
+        </span>
+        <div class="me-auto">
+          <a href="{{ link.href }}" 
+             class="opds-preview-link" 
+             target="_blank" 
+             title="View OPDS Publication Document">
+            <strong>{{ link.rel.split('/')[-1] }}</strong>
+          </a><br>
+          <a href="{{ link.href }}" 
+             class="text-muted" 
+             target="_blank">
+            <code>{{ link.href }}</code>
+          </a>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+
+{% macro render_opds_groups(groups, limit=None) %}
+  {% for group in groups %}
+    <div class="mb-4">
+      
+      {% set group_link_self = (group.links | selectattr('rel', 'equalto', 'self') | map(attribute='href') | list | first) %}
+
+      {% if group_link_self %}
+        <h4 class="fw-bold fs-4">
+          <a href="{{ url_for('main.fetch_url', source_url=group_link_self, skip_validation=1) }}"
+             class="text-decoration-underline text-primary">
+            {{ group.title }}
+          </a>
+        </h4>
+      {% else %}
+        <h4 class="fw-bold fs-4">{{ group.title }}</h4>
+      {% endif %}
+
+      {% if group.navigation %}
+        <div class="mb-2">
+          {% for nav in group.navigation %}
+            <ul>
+            <li><a href="{{ url_for('main.fetch_url') }}?source_url={{ nav.href | urlencode }}" class="list-group-item list-group-item-action" title="{{ nav.rel }}">
+              {{ nav.title or nav.href }}
+            </a>
+          </li>
+          </ul>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if group.publications %}
+        {% set publications = group.publications %}
+        {% if limit is not none %}
+          {% set publications = publications[:limit] %}
+        {% endif %}
+
+        <div class="d-flex overflow-auto flex-nowrap py-2">
+
+          {% for pub in publications %}
+
+
+            <div class="card me-3 shadow-sm" style="min-width: 250px; max-width: 250px;">
+
+              {% if pub.images %}
+                <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center">
+                  <img src="{{ pub.images[0].href }}" class="img-fluid rounded shadow-sm mb-2" style="max-height: 200px;" alt="Book cover for {{ pub.title }}">
+                </div>
+              {% else %}
+                <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center text-muted py-4">
+                  <i class="fas fa-image fa-2x mb-2"></i><br>
+                  <span class="fst-italic">No image available</span>
+                </div>
+              {% endif %}
+
+              <div class="card-body">
+                {% set self_href = None %}
+                {% for link in pub.links %}
+                  {% if link.rel == "self" %}
+                    {% set self_href = link.href %}
+                  {% endif %}
+                {% endfor %}
+
+                {% if self_href %}
+                  <h5 class="card-title">
+                    <a href="{{ url_for('main.fetch_url') }}?source_url={{ self_href | urlencode }}" class="text-decoration-underline text-primary">
+                      {{ pub.title }}
+                    </a>
+                  </h5>
+                {% else %}
+                  <h5 class="card-title">{{ pub.title }}</h5>
+                {% endif %}
+
+
+                {# -- Author or Contributor -- #}
+                {% if pub.author %}
+                  {% if pub.author is string %}
+                    <p class="card-text text-muted">{{ pub.author }}</p>
+                  {% elif pub.author.name %}
+                    <p class="card-text text-muted">{{ pub.author.name }}</p>
+                  {% endif %}
+                {% elif pub.contributor %}
+                  {% if pub.contributor is string %}
+                    <p class="card-text text-muted">{{ pub.contributor }}</p>
+                  {% elif pub.contributor.name %}
+                    <p class="card-text text-muted">{{ pub.contributor.name }}</p>
+                  {% endif %}
+                {% endif %}
+
+                {# Optional publisher line if needed #}
+                {# <p class="card-text"><strong>Publisher:</strong> {{ render_publisher(pub.publisher, pub.publisher_links) }}</p> #}
+              </div>
+
+              <div class="card-footer bg-white border-top-0 text-muted text-center small fst-italic">
+                {% if pub.type %}
+                  {% if 'schema.org/' in pub.type %}
+                    {{ pub.type.split('/')[-1] }}
+                  {% else %}
+                    {{ pub.type }}
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">Type Unknown</span>
+                {% endif %}
+              </div>
+
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endmacro %}
+
+
+
+
+
+{# ---------------- OPDS Facet Collection Renderer ---------------- #}
+{% macro render_opds_facets(facet_collections) %}
+  {% for facet in facet_collections %}
+    <div class="mb-3">
+      <h5 class="fw-semibold">{{ facet.title }}</h5>
+      <div class="d-flex flex-wrap gap-2">
+        {% for link in facet.links %}
+          <a href="{{ link.href }}" class="btn btn-sm btn-outline-primary">
+            {{ link.title }}
+            {% if link.numberOfItems is not none %}
+              <span class="badge bg-secondary">{{ link.numberOfItems }}</span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+{% endmacro %}
+
+{# ----------------- Facet Accordion Macro ------------------ #}
+{% macro render_facet_collections(facet_collections) %}
+  <div class="card h-100 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title text-uppercase text-dark"><i class="bi bi-list-nested me-1"></i> Facets</h5>
+
+      <div class="card-text">
+        {% if facet_collections %}
+          <div class="accordion" id="facetAccordion">
+            {% for facet_group in facet_collections %}
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="heading{{ loop.index }}">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                          data-bs-target="#collapse{{ loop.index }}" aria-expanded="false"
+                          aria-controls="collapse{{ loop.index }}">
+                    {{ facet_group.title }}
+                  </button>
+                </h2>
+                <div id="collapse{{ loop.index }}" class="accordion-collapse collapse"
+                     aria-labelledby="heading{{ loop.index }}" data-bs-parent="#facetAccordion">
+                  <div class="accordion-body p-0" style="max-height: 300px; overflow-y: auto;">
+                    <div class="list-group list-group-flush">
+                      {% for link in facet_group.links %}
+                        <a class="list-group-item list-group-item-action"
+                           href="{{ url_for('main.fetch_url') }}?source_url={{ link.href | urlencode }}">
+                          {{ link.title }}
+                          {% if link.numberOfItems %}
+                            <span class="badge bg-secondary float-end">{{ link.numberOfItems }}</span>
+                          {% endif %}
+                        </a>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-muted">No facet groups found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+
+{# ----------------- Catalog Links Accordion Macro ------------------ #}
+
+{% macro render_catalog_links(links) %}
+<div class="accordion mt-3" id="catalogLinksAccordion">
+  {% set groups = {
+    'search': [],
+    'self': [],
+    'navigation': [],
+    'other': []
+  } %}
+
+  {% for link in links %}
+    {% if link.rel == 'search' %}
+      {% set _ = groups['search'].append(link) %}
+    {% elif link.rel == 'self' %}
+      {% set _ = groups['self'].append(link) %}
+    {% elif link.rel in ['navigation', 'start', 'up', 'next', 'previous'] %}
+      {% set _ = groups['navigation'].append(link) %}
+    {% else %}
+      {% set _ = groups['other'].append(link) %}
+    {% endif %}
+  {% endfor %}
+
+  {% for group, items in groups.items() %}
+    {% if items %}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-{{ group }}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ group }}" aria-expanded="false" aria-controls="collapse-{{ group }}">
+            {{ group | capitalize }} Links ({{ items|length }})
+          </button>
+        </h2>
+        <div id="collapse-{{ group }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ group }}" data-bs-parent="#catalogLinksAccordion">
+          <div class="accordion-body">
+            <ul class="list-group list-group-flush">
+              {% for link in items %}
+                <li class="list-group-item">
+                  {% if group == 'search' and 'opensearch' in (link.type or '') %}
+                    <strong><i class="bi bi-search"></i> Link to Search Template: </strong><br/><code>{{ link.href }}</code>
+                  {% else %}
+                    <strong>{{ link.rel }}</strong><br/>
+                    <a href="{{ link.href }}" target="_blank" rel="noopener noreferrer">{{ link.href }}</a><br/>
+                    {% if link.type %}<small>Type: {{ link.type }}</small><br/>{% endif %}
+                    {% if link.title %}<small>Title: {{ link.title }}</small>{% endif %}
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endmacro %}

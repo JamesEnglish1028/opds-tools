@@ -1,0 +1,946 @@
+
+
+{% extends "base.html" %}
+
+{% block title %}Home | OPDS Tools{% endblock %}
+
+{% block content %}
+
+ <!-- Main Page Top Section Container -->
+<div class="container-fluid py-4 px-3">
+  <div class="container my-4">
+    <h3 class="text-primary text-uppercase mt-4 mb-4"><i class="bi bi-eye"></i> View OPDS 2.0 Catalog and Collection Feeds</h3>
+    <hr class="mt-0 mb-2">
+
+<div class="row g-4">
+
+  <!-- Left Column: Tabbed Form Panel -->
+  <div class="col-md-6">
+    <div class="card shadow-sm" style="height: 625px;">
+      <div class="card-header bg-light border-bottom-0">
+        <h5 class="card-title text-dark text-uppercase mt-2 me-2 mb-0">
+          <i class="bi bi-arrow-repeat"></i> View OPDS 2.0 Catalog
+        </h5>
+        <hr class="mt-2 mb-2">
+      </div>
+      <div class="card-body">
+
+        <!-- Tabbed Form Nav -->
+        <ul class="nav nav-tabs mb-0" id="opdsTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url" type="button" role="tab">
+              From URL
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+              From File
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="select-tab" data-bs-toggle="tab" data-bs-target="#select" type="button" role="tab">
+              From Registry
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="registry-tab" data-bs-toggle="tab" data-bs-target="#registry" type="button" role="tab">
+              From My List
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content Panes-->
+        <div class="tab-content">
+
+          <!-- URL Entry Tab -->
+          <div class="tab-pane fade show active p-3" id="url" role="tabpanel">
+            <form method="POST" action="/" id="feed-form">
+              <input type="hidden" name="form_type" value="fetch_url">
+              <div class="mb-3">
+                <div class="card-header text-uppercase h6">Catalog Feed Details</div>
+
+                <div class="form-floating mb-3">
+                  <input type="url"
+                        class="form-control"
+                        id="feed_url"
+                        name="feed_url"
+                        placeholder="https://example.com/opds.json"
+                        value="{{ feed_url }}">
+                  <label for="feed_url">OPDS URL</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input type="text"
+                        class="form-control"
+                        id="feed_username"
+                        name="username"
+                        placeholder="username or key">
+                  <label for="feed_username">Username (optional)</label>
+                </div>
+
+                <div class="form-floating mb-3">
+                  <input type="password"
+                        class="form-control"
+                        id="feed_password"
+                        name="password"
+                        placeholder="password or secret">
+                  <label for="feed_password">Password (optional)</label>
+                </div>
+
+              </div>
+
+              <div class="form-check mb-3">
+                <input class="form-check-input" id="skipValidationCheck" name="skip_validation" type="checkbox" value="1" {% if skip_validation %} checked {% endif %}/>
+                <label class="form-check-label" for="skipValidationCheck">Skip OPDS schema validation</label>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Fetch URL</button>
+                <a class="btn btn-outline-danger" href="{{ url_for('main.clear_session') }}">Clear</a>
+              </div>
+            </form>
+          </div>
+
+          <!-- Upload File Tab -->
+          <div class="tab-pane fade p-3" id="upload" role="tabpanel">
+          <form method="POST"
+                action="{{ url_for('main.index') }}"
+                enctype="multipart/form-data">
+            <input type="hidden" name="form_type" value="upload_file">
+              <div class="mb-3">
+                <div class="card-header text-uppercase h6 mb-2">Local Catalog File</div>
+                <div class="d-flex align-items-center mb-4">
+                  <input class="form-control" id="opds_file" name="opds_file" type="file"/>
+                </div>
+
+                <div class="form-check mb-3">
+                  <input class="form-check-input" id="skipValidationCheck" name="skip_validation" type="checkbox" value="1" {% if skip_validation %} checked {% endif %}/>
+                  <label class="form-check-label" for="skipValidationCheck">Skip OPDS schema validation</label>
+                </div>
+                
+              </div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Upload File</button>
+                <a class="btn btn-outline-danger" href="{{ url_for('main.clear_session') }}">Clear</a>
+              </div>
+            </form>
+          </div>
+
+          <!-- Select Catalog from Registry -->
+          <div class="tab-pane fade p-3" id="select" role="tabpanel">
+            <div class="card mb-3">
+
+              <div class="card-header text-uppercase h6">Registry Catalogs</div>
+              <div class="card-body">
+
+                <div class="mb-3">
+                  <input type="text" id="registry-url" class="form-control" placeholder="Enter remote registry URL">
+                </div>
+                <div class="mb-3 text-end">
+                  <button class="btn btn-outline-primary btn-sm" onclick="loadRegistry()">Load Remote</button>
+                </div>
+
+                <!-- Scrollable container -->
+                <div class="border rounded" style="max-height: 300px; overflow-y: auto;">
+                  <div class="accordion" id="catalogAccordion">
+                    <ul id="remote-catalog-list" class="list-group mb-0"></ul>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- Manage My List -->
+          <div class="tab-pane fade p-3" id="registry" role="tabpanel">
+            <div class="tab-content overflow-auto" style="max-height: 460px;">
+
+              <!-- Add New Catalog Toggle -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="text-uppercase m-0">My List</h6>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#addCatalogCollapse" aria-expanded="false" aria-controls="addCatalogCollapse">
+                  Add
+                </button>
+              </div>
+
+              <!-- Add New Catalog Form -->
+              <div class="collapse" id="addCatalogCollapse">
+                <div class="card mb-3">
+                  <div class="card-header text-uppercase h6">Catalog Details</div>
+                  <div class="card-body">
+                    <form method="POST" action="{{ url_for('main.index') }}">
+                      <input type="hidden" name="form_type" value="add_catalog">
+                      <div class="form-floating mb-3">
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="catalogTitle"
+                          name="title"
+                          placeholder="Catalog Name"
+                          required
+                        >
+                        <label for="catalogTitle">Catalog Name</label>
+                      </div>
+
+                      <div class="form-floating mb-3">
+                        <input
+                          type="text"
+                          class="form-control"
+                          id="catalogDescription"
+                          name="description"
+                          placeholder="Description"
+                        >
+                        <label for="catalogDescription">Description</label>
+                      </div>
+
+                      <div class="form-floating mb-3">
+                        <input
+                          type="url"
+                          class="form-control"
+                          id="catalogURL"
+                          name="url"
+                          placeholder="https://example.org/opds"
+                          required
+                        >
+                        <label for="catalogURL">Catalog URL</label>
+                      </div>
+                      <button type="submit" class="btn btn-primary btn-sm">Add</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Saved Catalog List -->
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span class="h6 text-uppercase m-0">Catalogs</span>
+                  <button class="btn btn-sm btn-outline-primary" onclick="loadCatalogs()">Load List</button>
+                </div>
+                <div class="overflow-auto" style="max-height: 350px;">
+                  <ul id="registryList" class="list-group list-group-flush">
+                    {% for catalog in catalogs %}
+                      <li class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                          <div class="fw-bold">{{ catalog.title }}</div>
+                          <div class="text-muted small">{{ catalog.description }}</div>
+                          <a href="{{ catalog.url }}" target="_blank">{{ catalog.url }}</a>
+                        </div>
+                        <div class="btn-group" role="group">
+                          <form method="POST" action="{{ url_for('main.delete_catalog', catalog_id=catalog.id) }}" onsubmit="return confirm('Delete this catalog?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                          </form>
+                          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editCatalogModal" data-id="{{ catalog.id }}" data-title="{{ catalog.title }}" data-description="{{ catalog.description }}" data-url="{{ catalog.url }}">
+                            Edit
+                          </button>
+                          <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewCatalog('{{ catalog.url }}')">View</button>
+                        </div>
+                      </li>
+                    {% else %}
+                      <li class="list-group-item text-muted">No catalogs saved.</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- end tab-content -->
+      </div> <!-- end card-body -->
+    </div> <!-- end card -->
+  </div> <!-- end col -->
+
+
+      <!-- Right Column: Flash Messages -->
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body" style="height: 625px;">
+            <h5 class="card-title text-dark text-uppercase me-2"><i class="bi bi-clipboard-check"></i> OPDS Validation Process Messages</h5>
+            <hr class="mt-0 mb-4">
+            <div class="text">
+              <p><strong>About Validation:</strong>  You can skip validation or let the validator run to see schematic issues with the feeds.  Feeds MUST be valid JSON to work.</p>
+              <p>You can learn more about the specficiation at <a href= "https://drafts.opds.io/opds-2.0.html"> OPDS 2.0 Specification Website</a></p>
+                <ul><strong>Links to Validation Schemas Used:</strong>
+                  <li><a href="https://drafts.opds.io/schema/feed.schema.json">OPDS 2.0 Catalog (JSON) Schema</a></li>
+                  <li><a href="https://drafts.opds.io/schema/publication.schema.json">Publication Schema</a></li>
+                </ul>
+            </div>
+            <div style="max-height: 300px; overflow-y: auto;">
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show mt-3 custom-alert" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+          </div>
+          </div>
+        </div>
+      </div> <!-- end col -->
+
+    </div> <!-- end row -->
+  </div> <!-- end container -->
+</div> <!-- end container-fluid -->
+
+
+<div class="container my-4">
+
+  <!-- Row: Catalog Metadata, Navigation, Facets -->
+  <div class="row g-3 py-4">
+
+<!-- Column 1: Catalog Metadata -->
+<div class="col-md-4">
+  <div class="d-flex justify-content-between align-items-center p-3 pt-4 pb-0">
+    <div class="card-title h3 text-dark text-uppercase">
+      <i class="bi bi-books me-2"></i> Catalog
+    </div>
+    <div class="text-end">
+      <a href="https://drafts.opds.io/opds-2.0.html#23-images" target="_blank" rel="noopener noreferrer" class="small text-decoration-underline">
+        <i class="bi bi-link-45deg"></i> Spec
+      </a>
+    </div>
+  </div>
+
+  <hr class="mt-2 mb-4">
+
+  <div class="card h-100 shadow-sm">
+    <div class="card-body">
+
+      {% if catalog_metadata %}
+      <div class="card-text">
+        <h5 class="card-title text-uppercase text-dark me-2"><i class="bi bi-card-list me-2"></i> Catalog Metadata</h5>
+        <hr class="mt-0 mb-4">
+        <h6><strong>Catalog Name:</strong></h6><h6 class="text-primary"> {{ catalog_metadata.feed_name }}</h6>
+        <ul class="list-unstyled">
+          <li>Items: {{ catalog_metadata.number_of_items }}</li>
+          <li>Items per Page: {{ catalog_metadata.items_per_page }}</li>
+        </ul>
+      </div>
+
+      <div class="card-text mt-3">
+        <h5 class="card-title text-uppercase text-dark me-2"><i class="bi bi-link me-2"></i> Auth Document & Search Links</h5>
+        <hr class="mt-0 mb-4">
+      </div>
+      {% endif %}
+
+      <!-- Catalog Links -->
+      <div>
+        {% if catalog_links %}
+          {{ catalog_macros.render_catalog_links(catalog_links, catalog_metadata) }}
+        {% else %}
+          <p class="text-muted">No additional links available.</p>
+        {% endif %}
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="mt-4">
+        <h5 class="card-title text-uppercase text-dark"><i class="bi bi-link me-2"></i> Pagination Links</h5>
+        <hr class="mt-0 mb-4">
+        <a href="https://drafts.opds.io/opds-2.0#4-pagination"><i class="bi bi-link-45deg text-primary me-2"></i> Spec</a>
+      </div>
+
+      {% if navigation_links %}
+      <div class="row mt-4">
+        <div class="col-md-12">
+          <nav aria-label="OPDS page navigation" class="bg-white shadow-sm py-3">
+            <ul class="pagination justify-content-center mb-0">
+              <li class="page-item {% if not navigation_links.first %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.fetch_url', source_url=navigation_links.first) if navigation_links.first else '#' }}">« First</a>
+              </li>
+              <li class="page-item {% if not navigation_links.previous %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.fetch_url', source_url=navigation_links.previous) if navigation_links.previous else '#' }}">‹ Prev</a>
+              </li>
+              {% if navigation_links.current_page %}
+              <li class="page-item active">
+                <span class="page-link">
+                  Page {{ navigation_links.current_page }}
+                  {% if navigation_links.total_pages %}
+                    of {{ navigation_links.total_pages }}
+                  {% endif %}
+                </span>
+              </li>
+              {% endif %}
+              <li class="page-item {% if not navigation_links.next %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.fetch_url', source_url=navigation_links.next) if navigation_links.next else '#' }}">Next ›</a>
+              </li>
+              <li class="page-item {% if not navigation_links.last %}disabled{% endif %}">
+                <a class="page-link" href="{{ url_for('main.fetch_url', source_url=navigation_links.last) if navigation_links.last else '#' }}">Last »</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+      {% endif %}
+
+    </div> <!-- /.card-body -->
+  </div> <!-- /.card -->
+</div> <!-- /.col-md-4 -->
+
+
+
+    <div class="col-md-4">    <!-- Column 2: Navigation Collections -->
+              <div class="d-flex justify-content-between align-items-center p-3 pt-4 pb-0">
+          <div class="card-title h3 text-dark text-uppercase" id="navigation-section">
+            <i class="bi bi-books me-2"></i> Navigation
+          </div>
+          <div class="text-end">
+            <a href="https://drafts.opds.io/opds-2.0#21-navigation" target="_blank" rel="noopener noreferrer" class="small text-decoration-underline">
+              <i class="bi bi-link-45deg"></i> Spec
+            </a>
+          </div>
+</div>
+
+<hr class="mt-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+
+          <div class="card-text">
+            {% if navigation_collections %}
+              <div class="list-group">
+                {% for nav in navigation_collections %}
+                  <a class="list-group-item list-group-item-action" href="{{ url_for('main.fetch_url') }}?source_url={{ nav.href | urlencode }}">
+                    {{ nav.title }}
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p class="text-muted">No navigation items found.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4"><!-- # Column 2: Facet Collections #-->
+        <div class="d-flex justify-content-between align-items-center p-3 pt-4 pb-0">
+          <div class="card-title h3 text-dark text-uppercase" id="facets-section">
+            <i class="bi bi-books me-2"></i> Facets
+          </div>
+          <div class="text-end">
+            <a href="https://drafts.opds.io/opds-2.0#24-facets" target="_blank" rel="noopener noreferrer" class="small text-decoration-underline">
+              <i class="bi bi-link-45deg"></i> Spec
+            </a>
+          </div>
+        </div>
+
+        <hr class="mt-2 mb-4">
+        <div class="card-body">
+          {{ render_facet_collections(facet_collections) }}
+        </div> <!-- end card body-->
+        </div> <!-- end col md-4-->
+        </div> <!-- end row g-3 for Catalog Links and Metadata, Navigation Collections, and Facets headings and cards -->
+        </div> <!-- End Container for Catalog Links and Metadata, Navigation Collections, and Facets Section-->
+
+
+    <!-- === NEW: Groups Section as its own row inside a container === -->
+<div class="container my-4" id="Groups">
+<div class="row mt-5 pt-3">
+  <div class="col-md-12 py-4">
+    <div class="d-flex justify-content-between align-items-center p-3 pt-4 pb-0">
+      <div class="card-title h3 text-dark text-uppercase" id="groups-section">
+        <i class="bi bi-books me-2"></i> Groups
+      </div>
+      <div class="text-end">
+        <a href="https://drafts.opds.io/opds-2.0.html#23-images" target="_blank" rel="noopener noreferrer" class="small text-decoration-underline">
+          <i class="bi bi-link-45deg"></i> Spec
+        </a>
+      </div>
+    </div>
+
+    <hr class="mt-2 mb-4">
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+        {% if groups %}
+          {{ macros.render_opds_groups(groups, limit=20) }}
+        {% else %}
+          <p class="text-muted">No Groups Found</p>
+        {% endif %}
+      </div>
+    </div>
+  </div> <!-- end col-12-->
+</div> <!-- col row -->
+</div> <!-- end Groups Cards Container -->
+
+<!----Publication Colleciton section container"-->
+
+<div class="container my-4"> 
+<div class="row mt-5 pt-3"> <!-- Publications Colection row-->
+
+<div class="d-flex justify-content-between align-items-center position-sticky top-0 bg-white z-3 p-3 pt-4 pb-0 border-bottom">
+  <div class="card-title h3 text-dark text-uppercase" id="publications-section">
+    <i class="bi bi-books me-2"></i> Publications
+  </div>
+  <div>
+    {% if catalog_metadata %}
+    <h3 class="text-primary"> {{ catalog_metadata.feed_name }}</h3>
+    {% endif %}
+  </div>
+  <div class="text-end">
+    <a href="https://drafts.opds.io/opds-2.0.html#23-publications" target="_blank" rel="noopener noreferrer" class="small text-decoration-underline">
+      <i class="bi bi-link-45deg"></i> Spec
+    </a>
+  </div>
+
+</div>
+<hr class="mt-2 mb-4">
+
+
+<!-- Search Form is Open Search Template URL present MACRO -->
+  <div> 
+
+    {% if opensearch_template %}
+      <form method="POST" action="{{ url_for('open_search.opds_search_post') }}">
+        <input type="hidden" name="template_url" value="{{ opensearch_template }}">
+        <input type="text" name="search_terms" class="form-control" placeholder="Enter search terms">
+        <button type="submit" class="btn btn-primary mt-2">Search</button>
+        <small class="form-text text-muted mt-1">Search powered by OpenSearch template:</small>
+        <code class="d-block text-break small mt-1">{{ opensearch_template }}</code>
+      </form>
+    {% endif %}
+
+  </div>
+
+
+{% if extracted_data %}
+<div class="container">
+  <div class="row row-cols-1 row-cols-md-1 g-4 py-5">
+    {% for item in extracted_data %}
+    <div class="col py-2">
+      <div class="card h-100 shadow-sm">
+        <div class="row g-0">
+          <!-- Left Column: Image -->
+          <div class="col-md-3 d-flex flex-column bg-white border-end py-4">
+            <div class="d-flex justify-content-between align-items-center px-3 pb-2">
+              <div class="card-title h5 text-dark text-uppercase">
+                <i class="bi bi-image me-2"></i> Images
+              </div>
+              <a href="https://drafts.opds.io/opds-2.0.html#23-images" target="_blank" class="small text-decoration-underline text-end">
+                <i class="bi bi-link-45deg"></i> Spec
+              </a>
+            </div>
+            <hr class="mt-0 mb-4 mx-3">
+            <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 text-center px-3">
+              {% if item.image %}
+              <img src="{{ item.image.href }}" class="img-fluid rounded shadow-sm mb-2 w-100" style="max-height: 200px; object-fit: contain;" alt="Book cover for {{ item.title }}">
+              <ul class="list-unstyled small text-muted mb-0">
+                {% if item.image.type %}<li><strong>Type:</strong> {{ item.image.type }}</li>{% endif %}
+                {% if item.image.width %}<li><strong>Width:</strong> {{ item.image.width }}</li>{% endif %}
+                {% if item.image.height %}<li><strong>Height:</strong> {{ item.image.height }}</li>{% endif %}
+              </ul>
+              {% else %}
+              <div class="text-muted">
+                <i class="fas fa-image fa-2x mb-2"></i><br>
+                <span class="fst-italic">No image available</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Right Column: Metadata -->
+          <div class="col-md-9 py-4">
+            <div class="d-flex justify-content-between align-items-center px-3 pb-2">
+              <div class="card-title h5 text-dark text-uppercase">
+                <i class="bi bi-journal me-2"></i> Publication Metadata
+              </div>
+              <a href="https://drafts.opds.io/opds-2.0#52-metadata" target="_blank" class="small text-decoration-underline text-end">
+                <i class="bi bi-link-45deg"></i> Spec
+              </a>
+            </div>
+            <hr class="mt-0 mb-4 mx-3">
+
+            <!-- Mandatory -->
+            <h6 class="text-danger mb-3 text-uppercase pt-4"> <i class="bi bi-clipboard-check me-2"></i> Mandatory Metadata for Palace </h6>
+            <hr class="mt-3 mb-4">
+            <div class="m-4 g-3">
+              {% if item.self_href %}
+              <h5 class="card-title">Title: 
+                <a href="{{ item.self_href }}" target="_blank" rel="noopener noreferrer" class="text-decoration-none">
+                  {{ item.title }}
+                  <span class="ms-2" title="View raw OPDS JSON">
+                    <i class="bi bi-filetype-json"></i>
+                  </span>
+                </a>
+              </h5>
+              <p class="card-text"><strong>Self Link: </strong>{{ item.self_href }}</p>
+              {% else %}
+              <h5 class="card-title text-muted">{{ item.title }}</h5>
+              <p class="text-danger">Missing a self link</p>
+              {% endif %}
+              {% if item.manifest_url %}
+                <a href="{{ thorium_web_url }}?book={{ item.manifest_url }}" target="_blank"
+                  class="btn btn-sm btn-outline-success" title="Open in Thorium Web Reader">
+                  <i class="bi bi-book-half me-1"></i> Thorium
+                </a>
+              {% endif %}
+              {% if item.subtitle and item.subtitle != "None" %}<h6 class="card-subtitle mb-2 text-muted">{{ item.subtitle }}</h6>{% endif %}
+              {% if item.identifier %}<p class="card-text"><strong>Identifier:</strong> {{ item.identifier }}</p>{% endif %}
+              <p class="card-text"><strong>Publication Type:</strong> {{ render_schema_type_badge(item.publication_type) }}</p>
+              <p class="card-text"><strong>Author:</strong> {{ item.author }}</p>
+              <p class="card-text"><strong>Language:</strong> {{ item.language }}</p>
+
+              <div class="d-flex flex-wrap gap-2">
+                {% if item.subjects %}
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#sub-{{ loop.index }}">Subjects</button>
+                {% else %}
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#sub-{{ loop.index }}">Missing Subjects</button>
+                {% endif %}
+                {% if item.acquisition_links %}
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#acq-{{ loop.index }}">Links</button>
+                {% else %}
+                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#acq-{{ loop.index }}">Missing Acquisition Link</button>
+                {% endif %}
+              </div>
+
+              <div class="mt-3">
+                {% if item.subjects %}
+                <div class="collapse" id="sub-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Subjects</h6>
+                  <div class="card card-body bg-light">
+                    <ul class="mb-2">
+                      {% for subject in item.subjects %}
+                      <li>{{ subject.name if subject is mapping else subject }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+
+                {% if item.acquisition_links %}
+                {% import 'macros.html' as macros %}
+                <div class="collapse" id="acq-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Acquisition Links</h6>
+                  <div class="card card-body bg-light">
+                    {{ macros.render_links_list(item.acquisition_links) }}
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Recommended -->
+            <h6 class="text-success mb-3 text-uppercase pt-4"> <i class="bi bi-clipboard-check me-2"></i> Recommended Information </h6>
+            <hr class="mt-3 mb-4">
+            <div class="m-4 g-3">
+              <p class="card-text"><strong>Publisher:</strong> {{ macros.render_publisher_links(item.publisher, item.publisher_links) }}</p>
+              <p class="card-text"><strong>Published:</strong> {{ item.published }}</p>
+              <p class="card-text"><strong>License:</strong> {{ item.license }}</p>
+              {% if item.series %}<p class="card-text text-danger"> The {{ item.series }} Series should be in BelongsTo Collection.</p>{% endif %}
+              <p class="card-text"><strong>Intended Audience:</strong> {{ item.audience }}</p>
+
+              <div class="d-flex flex-wrap gap-2">
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#desc-{{ loop.index }}">Description</button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#alt_id-{{ loop.index }}">Alt IDs</button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#acc-{{ loop.index }}">Accessibility</button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#be_to-{{ loop.index }}">BelongsTo</button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#contains-{{ loop.index }}">Contains</button>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#groups-{{ loop.index }}">Groups</button>
+              </div>
+
+              <div class="mt-3">
+                {% if item.description %}
+                <div class="collapse" id="desc-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Description</h6>
+                  <div class="card card-body bg-light">{{ item.description | safe }}</div>
+                </div>
+                {% endif %}
+
+                <div class="collapse" id="alt_id-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Alternative IDs</h6>
+                  <div class="card card-body bg-light">
+                    {% set alt_ids = item.alt_identifier if item.alt_identifier is iterable else [] %}
+                    {% if alt_ids | length > 0 %}
+                      {{ macros.render_alt_identifier_badges(alt_ids) }}
+                    {% else %}
+                      <span class="fst-italic text-muted">No alternate identifiers.</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="collapse" id="acc-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Accessibility Information</h6>
+                  <div class="card card-body bg-light">
+                    {% set acc = item.accessibility if item.accessibility is mapping else {} %}
+                    {% set valid_items = acc.items() | selectattr('1') | list %}
+
+                    {% if valid_items %}
+                      <ul>
+                        {% for key, value in valid_items %}
+                          <li>
+                            <strong>{{ key | replace('_', ' ') | title }}:</strong>
+                            {{ value if value is string else value | join(', ') }}
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% else %}
+                      <span class="fst-italic text-muted">Unknown</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="collapse" id="be_to-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Belongs To</h6>
+                  <div class="card card-body bg-light">
+                    {% set belongs = item.belongs_to if item.belongs_to is iterable else [] %}
+                    {% if belongs | length > 0 %}
+                      <ul class="mb-0">
+                        {% for entry in belongs %}
+                          <li>
+                            <strong>{{ entry.label }}:</strong>
+                            {{ entry.name }}
+                            {% if entry.url %}
+                              (<a href="{{ entry.url }}" target="_blank" rel="noopener">link</a>)
+                            {% endif %}
+                          </li>
+                        {% endfor %}
+                      </ul>
+                    {% else %}
+                      <span class="fst-italic text-muted">No series or collection info.</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                <div class="collapse" id="groups-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Groups</h6>
+                  <div class="card card-body bg-light">
+                    {% set groups = item.groups if item.groups is iterable else [] %}
+                    {% if groups | length > 0 %}
+                      {{ macros.render_opds_groups(groups) }}
+                    {% else %}
+                      <span class="fst-italic text-muted">No groups available.</span>
+                    {% endif %}
+                  </div>
+                </div>
+
+                {% if item.contains %}
+                <div class="collapse" id="contains-{{ loop.index }}">
+                  <h6 class="text-primary mb-2">Contained Articles</h6>
+                  <div class="card card-body bg-light">
+                    <ul class="list-group">
+                      {% for article in item.contains %}
+                      <li class="list-group-item">
+                        {% if article.image %}<img src="{{ article.image }}" class="me-2" style="width: 30px;">{% endif %}
+                        {% if article.href %}<a href="{{ article.href }}" class="text-decoration-none">{{ article.title }}</a>{% else %}<span>{{ article.title }}</span>{% endif %}
+                      </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div> <!-- end inner collapses -->
+            </div> <!-- end optional section -->
+          </div> <!-- col-md-9 -->
+        </div> <!-- row g-0 -->
+      </div> <!-- card -->
+    </div> <!-- col -->
+    {% endfor %}
+  </div> <!-- row -->
+</div> <!-- container -->
+{% else %}
+<p>No publication data available.</p>
+{% endif %}
+
+</div>
+
+  <!---------------- # MODALS # -------------------->
+
+
+<!-- Catalog Search Link Modal-->
+<!-- Paste actual modal contents below for testing -->
+<div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('open_search.opds_search_post') }}">
+        <div class="modal-header">
+          <h5 class="modal-title" id="searchModalLabel">Search Catalog</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" id="opensearchTemplateUrl" name="template_url" />
+          <div class="mb-3">
+            <label for="searchTerm" class="form-label">Search Terms</label>
+            <input type="text" class="form-control" id="searchTerm" name="search_term" required>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Search</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Catalog Modal -->
+<div class="modal fade" id="editCatalogModal" tabindex="-1" aria-labelledby="editCatalogModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('main.index') }}">
+      <input type="hidden" name="form_type" value="edit_catalog">
+      <input type="hidden" name="catalog_id" id="editCatalogId">
+
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editCatalogModalLabel">Edit Catalog</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editCatalogTitle" class="form-label">Catalog Name</label>
+            <input type="text" class="form-control" id="editCatalogTitle" name="title" required>
+          </div>
+          <div class="mb-3">
+            <label for="editCatalogDescription" class="form-label">Description</label>
+            <input type="text" class="form-control" id="editCatalogDescription" name="description">
+          </div>
+          <div class="mb-3">
+            <label for="editCatalogURL" class="form-label">Catalog URL</label>
+            <input type="url" class="form-control" id="editCatalogURL" name="url" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+<!-- Registry Modal (Tabbed: Remote + Local) -->
+<div class="modal fade" id="registryModal" tabindex="-1" aria-labelledby="registryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      {% include "registry_modal.html" %}
+    </div>
+  </div>
+</div>
+
+  <!-- OPDS JSON Modal -->
+    <div class="modal fade" id="opdsJsonModal" tabindex="-1" aria-labelledby="opdsJsonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="opdsJsonModalLabel">OPDS JSON Preview</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body bg-dark text-light">
+            <pre id="opdsJsonContent" class="mb-0"><code>// loading...</code></pre>
+        </div>
+        </div>
+    </div>
+    </div>
+
+  <!-- Auth Doc Modal -->
+  <div aria-hidden="true" class="modal fade" id="authDocModal" tabindex="-1">
+   <div class="modal-dialog modal-lg">
+    <div class="modal-content" id="authDocModalContent">
+     <div class="modal-body">
+      Loading...
+     </div>
+    </div>
+   </div>
+  </div>
+
+  <!-- Handle Handle OPDS JSON Preview + Fetch -->
+     {% include 'preview_modal.html' %}
+
+{% endblock %}
+
+
+{% block scripts %}
+<!-- Required Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-..." crossorigin="anonymous"></script>
+
+<!-- Your Custom Scripts -->
+<script src="{{ url_for('static', filename='js/previewModal.js') }}"></script>
+<script src="{{ url_for('static', filename='js/navigationLoader.js') }}"></script>
+<script src="{{ url_for('static', filename='js/authModalLoader.js') }}"></script>
+<script src="{{ url_for('static', filename='js/registryLoader.js') }}"></script>
+<script src="{{ url_for('static', filename='js/registryManager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tabRegistryLoader.js') }}"></script>
+
+<!-- Additional inline scripts -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchModal = document.getElementById('searchModal');
+    const templateInput = document.getElementById('opensearchTemplateUrl');
+
+    if (searchModal) {
+      searchModal.addEventListener('show.bs.modal', (event) => {
+        const button = event.relatedTarget;
+        const templateUrl = button.getAttribute('data-opensearch-url');
+        if (templateUrl && templateInput) {
+          templateInput.value = templateUrl;
+        }
+      });
+    }
+  });
+
+  const editModal = document.getElementById('editCatalogModal');
+  if (editModal) {
+    editModal.addEventListener('show.bs.modal', function (event) {
+      const button = event.relatedTarget;
+      document.getElementById('editCatalogId').value = button.getAttribute('data-id');
+      document.getElementById('editCatalogTitle').value = button.getAttribute('data-title');
+      document.getElementById('editCatalogDescription').value = button.getAttribute('data-description');
+      document.getElementById('editCatalogURL').value = button.getAttribute('data-url');
+    });
+  }
+
+  function viewCatalog(url) {
+    const input = document.querySelector('input[name="feed_url"]');
+    if (input) {
+      input.value = url;
+      input.form.submit();
+    }
+  }
+
+  function loadCatalogs() {
+    const registryList = document.getElementById('registryList');
+    fetch('/api/catalogs')
+      .then(response => response.json())
+      .then(data => {
+        registryList.innerHTML = '';
+        if (data.length === 0) {
+          registryList.innerHTML = '<li class="list-group-item text-muted">No catalogs saved.</li>';
+          return;
+        }
+
+        data.forEach(catalog => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item d-flex justify-content-between align-items-start';
+          li.innerHTML = `
+            <div class="ms-2 me-auto">
+              <div class="fw-bold">${catalog.title}</div>
+              <div class="text-muted small">${catalog.description || ''}</div>
+              <a href="${catalog.url}" target="_blank">${catalog.url}</a>
+            </div>
+            <div class="d-flex gap-1">
+              <form method="POST" action="/delete-catalog/${catalog.id}" onsubmit="return confirm('Delete this catalog?')">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+              </form>
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal"
+                      data-bs-target="#editCatalogModal"
+                      data-id="${catalog.id}"
+                      data-title="${catalog.title}"
+                      data-description="${catalog.description || ''}"
+                      data-url="${catalog.url}">Edit</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="viewCatalog('${catalog.url}')">View</button>
+            </div>
+          `;
+          registryList.appendChild(li);
+        });
+      })
+      .catch(err => {
+        console.error("Error loading catalogs:", err);
+        registryList.innerHTML = '<li class="list-group-item text-danger">Failed to load catalogs.</li>';
+      });
+  }
+</script>
+{% endblock %}
+

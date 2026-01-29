@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+<div class="container-fluid py-4 px-3">
+  <div class="container my-4">
+    <h3 class="text-primary text-uppercase mt-4 mb-4"><i class="bi bi-database me-2"></i>Stored ODL Feeds</h3>
+    <hr class="mt-0 mb-2">
+
+  <h4 class="mb-3 text-primary"><i class="bi bi-journals"></i> Publications for "{{ feed.name }}"</h4>
+
+  {% if publications %}
+    <div class="mb-3">
+        <form method="get" class="row gy-2 gx-3 align-items-center mb-3">
+        <div class="col-auto">
+            <input type="text" name="title" class="form-control" placeholder="Title" value="{{ search_title }}">
+        </div>
+        <div class="col-auto">
+            <select name="format" class="form-select">
+            <option value="">All Formats</option>
+            {% for fmt in all_formats %}
+                <option value="{{ fmt }}" {% if fmt == selected_format %}selected{% endif %}>{{ fmt }}</option>
+            {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <select name="publication_type" class="form-select">
+            <option value="">All Types</option>
+            {% for t in all_types %}
+                <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-md-3">
+          <label for="term">Term Key</label>
+          <select name="term" class="form-select">
+            <option value="">All</option>
+            {% for k, v in available_terms.items() %}
+              <option value="{{ k }}" {% if selected_term_key == k %}selected{% endif %}>{{ k }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label for="term_value">Term Value</label>
+          <input type="text" name="term_value" class="form-control" value="{{ selected_term_value or '' }}">
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+        </form>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">Summary</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Publication Types -->
+          <div class="col-md-4">
+            <h6 class="text-muted">Publication Types</h6>
+            {% if type_counts %}
+              <ul class="list-unstyled">
+                {% for t, count in type_counts.items() %}
+                  <li><strong>{{ t | replace('http://schema.org/', '') }}:</strong> {{ count }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">No types found.</p>
+            {% endif %}
+          </div>
+
+          <!-- Formats -->
+          <div class="col-md-4">
+            <h6 class="text-muted">Formats</h6>
+            {% if format_counts %}
+              <ul class="list-unstyled">
+                {% for fmt, count in format_counts.items() %}
+                  <li><strong>{{ fmt }}:</strong> {{ count }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">No formats found.</p>
+            {% endif %}
+          </div>
+
+          <!-- Terms -->
+          <div class="col-md-4">
+            <h6 class="text-muted">Terms</h6>
+            {% if term_key_counts %}
+              <ul class="list-unstyled">
+                {% for k, count in term_key_counts.items() %}
+                  <li><strong>{{ k }}:</strong> {{ count }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">No terms found.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="d-grid gap-4">
+      {% for item in publications %}
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="row gy-3">
+              <div class="col-md-4">
+                <h5 class="card-title">{{ item.data.title }}</h5>
+                {% if item.data.authors %}
+                  <p class="mb-1"><strong>By:</strong> {{ item.data.authors | join(', ') }}</p>
+                {% endif %}
+                {% if item.data.odl.identifier %}
+                  <p class="mb-1"><strong>ID:</strong> {{ item.data.odl.identifier }}</p>
+                {% endif %}
+                {% if item.data.odl.format %}
+                  <p class="mb-1"><strong>Format:</strong> {{ item.data.odl.format | join(', ') }}</p>
+                {% endif %}
+              </div>
+
+              <div class="col-md-4">
+                {% if item.data.odl.created %}
+                  <p class="mb-1"><strong>Created:</strong> {{ item.data.odl.created }}</p>
+                {% endif %}
+                {% if item.data.odl.price %}
+                  <p class="mb-1"><strong>Price:</strong> {{ item.data.odl.price.currency }} {{ item.data.odl.price.value }}</p>
+                {% endif %}
+                {% if item.data.odl.terms %}
+                  <p class="mb-1">
+                    <strong>Terms:</strong> Concurrency {{ item.data.odl.terms.concurrency }},
+                    Length {{ item.data.odl.terms.length }}
+                  </p>
+                {% endif %}
+              </div>
+
+              <div class="col-md-4">
+                {% if item.data.odl.order %}
+                  <p class="mb-1">
+                    <strong>Order:</strong>
+                    <a href="{{ item.data.odl.order.href }}" target="_blank">{{ item.data.odl.order.name }}</a>
+                    ({{ item.data.odl.order.identifier }})
+                  </p>
+                {% endif %}
+
+                {% if item.data.links %}
+                  <p class="mb-1"><strong>Acquisition Links:</strong></p>
+                  <ul class="list-unstyled">
+                    {% for link in item.data.links %}
+                      <li>
+                        <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#licenseModal" data-url="{{ link.href }}" data-rel="{{ link.rel }}">
+                          {{ link.rel | capitalize }}
+                        </a>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No publications stored for this feed.</p>
+  {% endif %}
+</div>
+{% endblock %}

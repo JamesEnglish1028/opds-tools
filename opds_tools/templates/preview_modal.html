@@ -1,0 +1,21 @@
+<!-- templates/preview_modal.html -->
+ <style>
+  #previewModal pre {
+    white-space: pre !important;
+    font-family: monospace !important;
+    overflow-x: auto;
+  }
+</style>
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewModalLabel">Link Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="previewModalBody">
+        <div class="text-center text-muted">Loading preview…</div>
+      </div>
+    </div>
+  </div>
+</div>

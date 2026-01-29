@@ -1,0 +1,144 @@
+/* Base tab style */
+.nav-tabs .nav-link {
+  color: #1e1e1f; /* Default Bootstrap blue text */
+  border: 1px solid #c5c8ca;
+  border-bottom: none;
+  background-color: #c4c5c6fb; /* Light gray for inactive */
+  margin-right: 2px;
+  border-radius: 0.25rem 0.25rem 0 0;
+}
+
+.navbar .btn.active {
+  background-color: #ffffff;
+  color: #0d6efd;
+  font-weight: bold;
+}
+
+/* Hover effect */
+.nav-tabs .nav-link:hover {
+  background-color: #e9ecef;
+}
+
+/* Outline the card and give subtle shadow */
+.card {
+  border: 1px solid #c5c8ca;
+  border-radius: 0.5rem;
+}
+
+.card-title {
+  font-weight: 600;
+}
+
+/* Active tab style (already good, included for completeness) */
+.nav-tabs .nav-link.active {
+  color: #057bd4;
+  background-color: #ffffff;
+  border-bottom-color: transparent;
+  border-radius: 0.25rem 0.25rem 0 0;
+  border: 1px solid #c5c8ca;
+  border-bottom: none;
+}
+
+/* Ensure other tabs match the card */
+.nav-tabs .nav-link {
+  border: 1px solid transparent;
+}
+/* muted text*/
+.text-muted {
+  color: #6c757d; /* same as Bootstrap's gray */
+  font-style: italic;
+}
+
+.tab-pane {
+  border: 1px solid #c5c8ca;
+}
+
+h4, h5, h6 {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.4em 0.6em;
+}
+#navigation-section {
+  position: sticky;
+  top: 5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+#pagination-section {
+  position: sticky;
+  top: 5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+#Publication-card-section {
+  top: 5rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+  .alert.custom-alert {
+    font-size: 0.9rem;       /* Smaller font size */
+    padding: 0.5rem 1rem;    /* Less vertical and horizontal padding */
+    margin-bottom: 0.75rem;  /* Reduce spacing between messages */
+    max-width: 100%;         /* Prevent overflow */
+    word-wrap: break-word;   /* Prevent long text from stretching the box */
+  }
+
+  @media (min-width: 768px) {
+    .alert.custom-alert {
+      max-width: 75%;        /* Optional: limit width on larger screens */
+    }
+  }
+  .alert.custom-alert .btn-close {
+  transform: scale(0.85);
+}
+  .list-group-item {
+    border: none;
+    border-bottom: 1px solid #aba9a9;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+  .list-group-item:last-child {
+    border-bottom: none;
+}
+/* Truncation with ellipsis */
+.text-truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Optional: Hover row highlight */
+.hover-highlight:hover {
+  background-color: #c1c1c3; /* Light gray */
+  cursor: pointer;
+}
+/* Ensure pretty-printed JSON is rendered with correct spacing */
+#previewModal pre {
+  white-space: pre;
+  font-family: monospace;
+  background-color: #f8f9fa; /* light gray like Bootstrap's bg-light */
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+/* Custom placeholder size */
+.small-placeholder::placeholder {
+  font-size: 0.25rem; /* Adjust to your needs */
+  color: #91a5b6;    /* Optional: make it lighter */
+}
+
+
+/* Highlight dropdown items blue on hover/focus (Bootstrap 5 dark dropdown) */
+.dropdown-menu-light .dropdown-item:hover,
+.dropdown-menu-light .dropdown-item:focus {
+  background-color: #0d6efd; /* Bootstrap primary blue */
+  color: #fff;
+}
+
+

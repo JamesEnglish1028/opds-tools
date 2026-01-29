@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}ODL Utilities{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-3">
+  <div class="container my-4">
+    <h3 class="text-primary text-uppercase mt-4 mb-4"><i class="bi bi-eye me-2"></i>View OPDS 2.0 + ODL Feed</h3>
+    <hr class="mt-0 mb-2">
+
+    <div class="row g-4">
+      <!-- Left Column: Form -->
+      <div class="col-md-6">
+        <div class="card shadow-sm" style="height: 625px;">
+          
+          <div class="card-header bg-light border-bottom-0">
+            <h5 class="card-title text-dark text-uppercase mb-2"><i class="bi bi-arrow-repeat"></i> Fetch ODL Feeds</h5>
+            <hr class="mt-0 mb-2">
+          </div>
+          <div class="card-body" style="height: 625px;">
+            <ul class="nav nav-tabs mb-0" id="opdsTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="url-tab" data-bs-toggle="tab" data-bs-target="#url" type="button" role="tab">From URL</button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="select-tab" data-bs-toggle="tab" data-bs-target="#select" type="button" role="tab">From My List</button>
+              </li>
+            </ul>
+            <div class="tab-content mt-0">
+              <div class="tab-pane fade show active p-3" id="url" role="tabpanel">
+                <form method="POST">
+                  <h6 class="text-uppercase h6">ODL Feed Details</h6>
+                  <div class="form-floating mb-3">
+                    <input class="form-control" id="feed_url" name="feed_url" type="url" placeholder="https://example.com/opds.json" value="{{ request.form.feed_url or '' }}" required />
+                  <label for="feed_url">Enter URL to ODL feed:</label>
+                </div>
+                  <div class="form-floating mb-3">
+                      <input class="form-control" id="username" name="username" type="text" placeholder="username or key" value="{{ request.form.username or '' }}" />
+                      <label for="username">Username (optional)</label>
+                    <div class="form-floating mb-3">
+                      <input class="form-control" id="password" name="password" type="password" placeholder="password or secret" />
+                      <label for="password">Password (optional)</label>
+                    </div>
+                  </div>
+                  <div class="form-check mb-3">
+                    <input class="form-check-input" id="skipValidationCheck" name="skip_validation" type="checkbox" value="1" {% if request.form.skip_validation %}checked{% endif %}/>
+                    <label class="form-check-label" for="skipValidationCheck">Skip OPDS schema validation</label>
+                  </div>
+                  <div class="d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">Fetch URL</button>
+                    <a class="btn btn-outline-danger" href="{{ url_for('odl_utilities.clear_session') }}">Clear</a>
+                  </div>
+                </form>
+              </div>
+<div class="tab-pane fade" style="height: 500px;"" id="select" role="tabpanel">
+  <!-- Load saved feed -->
+   <p>Select from list below of saved feeds</p>
+  <form class="d-flex mb-3" method="get" action="{{ url_for('odl_utilities.odl_utilities') }}">
+    
+    <select name="feed_url" class="form-select me-2">
+      <option value="">— Saved feeds —</option>
+      {% for f in odl_feeds %}
+        <option value="{{ f.url }}">{{ f.name }}</option>
+      {% endfor %}
+    </select>
+      <div class="d-flex justify-content-between align-items-center mt-3 me-3">
+        <input type="hidden" name="skip_validation" value="{{ request.values.skip_validation }}">
+        <button class="btn btn-primary me-2" type="submit">Load</button>
+        <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#manageFeeds">Manage</button>
+      </div>
+  </form>
+
+  <!-- Inline management panel -->
+  <div class="collapse" style="height: 500px;" id="manageFeeds">
+    <div class="card card-body mb-4" style="height: 450px;">
+
+      <!-- New feed form -->
+      <h6 class="mb-2">Add New Feed</h6>
+        <form method="post" action="{{ url_for('odl_utilities.new_odl_feed') }}" class="row g-3 mb-3">
+          <div class="col-md-6">
+            <input name="name" class="form-control" placeholder="Name" required>
+          </div>
+          <div class="col-md-6">
+            <input name="url" type="url" class="form-control" placeholder="URL" required>
+          </div>
+          <div class="col-md-6">
+            <input name="username" class="form-control" placeholder="Username">
+          </div>
+          <div class="col-md-6">
+            <input name="password" type="password" class="form-control" placeholder="Password">
+          </div>
+          <div class="col-12 text-end">
+            <button class="btn btn-success btn-sm" type="submit">Add</button>
+          </div>
+        </form>
+
+      <!-- Edit/Delete existing -->
+      <h6 class="mb-2">Saved Feeds</h6>
+        <ul class="list-group">
+          {% for f in odl_feeds %}
+          <li class="list-group-item">
+            <!-- Row 1: Name and Buttons -->
+            <div class="d-flex justify-content-between align-items-center">
+              <span>{{ f.name }}</span>
+              <div class="d-flex">
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#editFeed{{ f.id }}">Edit</button>
+                <form method="post" action="{{ url_for('odl_utilities.delete_odl_feed', id=f.id) }}">
+                  <button class="btn btn-sm btn-outline-danger"
+                          onclick="return confirm('Delete {{ f.name }}?')">Delete</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Row 2: Collapsible Form -->
+            <div class="collapse mt-3" id="editFeed{{ f.id }}">
+              <form method="post" action="{{ url_for('odl_utilities.edit_odl_feed', id=f.id) }}" class="row g-2">
+                <div class="col-md-6">
+                  <input name="name" class="form-control" value="{{ f.name }}" required>
+                </div>
+                <div class="col-md-6">
+                  <input name="url" type="url" class="form-control" value="{{ f.url }}" required>
+                </div>
+                <div class="col-md-6">
+                  <input name="username" class="form-control" value="{{ f.username }}">
+                </div>
+                <div class="col-md-6">
+                  <input name="password" type="password" class="form-control" value="{{ f.password }}">
+                </div>
+                <div class="col-12 text-end">
+                  <button class="btn btn-primary btn-sm">Save</button>
+                </div>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+            </div>
+          </div>
+        </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Verification & Validation -->
+      <div class="col-md-6">
+        <div class="card shadow-sm" style="height: 625px;">
+          <div class="card-header bg-light">
+            <h5 class="mb-0 text-uppercase"><i class="bi bi-shield-check me-2"></i>Verification &amp; Validation</h5>
+          </div>
+          <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} mb-2" role="alert">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% else %}
+                <p class="text-muted mb-0">No messages.</p>
+              {% endif %}
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination Controls -->
+<div class="mt-4">
+  <div class="sticky-top bg-white mt-4 p-3" style="z-index: 1020;">
+  <h5 class="card-title text-uppercase text-dark"><i class="bi bi-link-45deg me-2"></i> Pagination Links</h5>
+  <hr class="mt-0 mb-4">
+  {% if navigation_links %}
+  <nav aria-label="ODL page navigation" class="bg-white shadow-sm py-3">
+    <ul class="pagination justify-content-center mb-0">
+      <li class="page-item {% if not navigation_links.first %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('odl_utilities.odl_utilities', feed_url=navigation_links.first, username=request.form.username, password='', skip_validation=request.form.skip_validation) if navigation_links.first else '#' }}">« First</a>
+      </li>
+      <li class="page-item {% if not navigation_links.previous %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('odl_utilities.odl_utilities', feed_url=navigation_links.previous, username=request.form.username, password='', skip_validation=request.form.skip_validation) if navigation_links.previous else '#' }}">‹ Prev</a>
+      </li>
+      {% if navigation_links.current_page %}
+      <li class="page-item active">
+        <span class="page-link">
+          Page {{ navigation_links.current_page }} {% if navigation_links.total_pages %} of {{ navigation_links.total_pages }}{% endif %}
+        </span>
+      </li>
+      {% endif %}
+      <li class="page-item {% if not navigation_links.next %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('odl_utilities.odl_utilities', feed_url=navigation_links.next, username=request.form.username, password='', skip_validation=request.form.skip_validation) if navigation_links.next else '#' }}">Next ›</a>
+      </li>
+      <li class="page-item {% if not navigation_links.last %}disabled{% endif %}">
+        <a class="page-link" href="{{ url_for('odl_utilities.odl_utilities', feed_url=navigation_links.last, username=request.form.username, password='', skip_validation=request.form.skip_validation) if navigation_links.last else '#' }}">Last »</a>
+      </li>
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+
+<!-- Publications Section: Full-Width Cards with Three Columns -->
+<div class="mt-4">
+  {% if publications %}
+    <div class="d-grid gap-4">
+      {% for item in publications %}
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="row gy-3">
+              <!-- Column 1: Basic Info -->
+              <div class="col-md-4">
+                <h5 class="card-title">{{ item.title }}</h5>
+                {% if item.authors %}
+                  <p class="mb-1"><strong>By:</strong> {{ item.authors | join(', ') }}</p>
+                {% endif %}
+                {% if item.odl.identifier %}
+                  <p class="mb-1"><strong>ID:</strong> {{ item.odl.identifier }}</p>
+                {% endif %}
+                {% if item.odl.format %}
+                  <p class="mb-1"><strong>Format:</strong> {{ item.odl.format | join(', ') }}</p>
+                {% endif %}
+              </div>
+
+              <!-- Column 2: Timeline & Financials -->
+              <div class="col-md-4">
+                {% if item.odl.created %}
+                  <p class="mb-1"><strong>Created:</strong> {{ item.odl.created }}</p>
+                {% endif %}
+                {% if item.odl.price %}
+                  <p class="mb-1"><strong>Price:</strong> {{ item.odl.price.currency }} {{ item.odl.price.value }}</p>
+                {% endif %}
+                {% if item.odl.terms %}
+                  <p class="mb-1">
+                    <strong>Terms:</strong> Concurrency {{ item.odl.terms.concurrency }}, 
+                    Length {{ item.odl.terms.length }}
+                  </p>
+                {% endif %}
+                {% if item.odl.protection %}
+                  <p class="mb-1">
+                    <strong>Protected:</strong> Devices {{ item.odl.protection.devices }}, 
+                    Copy {{ 'Yes' if item.odl.protection.copy else 'No' }}, 
+                    Print {{ 'Yes' if item.odl.protection.print else 'No' }}
+                  </p>
+                {% endif %}
+              </div>
+
+              <!-- Column 3: Actions & Links -->
+              <div class="col-md-4">
+                {% if item.odl.order %}
+                  <p class="mb-1">
+                    <strong>Order:</strong> 
+                    <a href="{{ item.odl.order.href }}" target="_blank">{{ item.odl.order.name }}</a> 
+                    ({{ item.odl.order.identifier }})
+                  </p>
+                {% endif %}
+
+                {% if item.links %}
+                  <p class="mb-1"><strong>Acquisition Links:</strong></p>
+                  <ul class="list-unstyled">
+                    {% for link in item.links %}
+                      <li>
+                        {% if link.href %}
+                          <a href="#" class="text-decoration-none"
+                             data-bs-toggle="modal"
+                             data-bs-target="#licenseModal"
+                             data-url="{{ link.href }}"
+                             data-rel="{{ link.rel }}">
+                            {% if link.rel == 'self' %}
+                              View License
+                            {% elif link.rel == 'borrow' %}
+                              Borrow License
+                            {% else %}
+                              {{ link.rel | capitalize }}
+                            {% endif %}
+                          </a>
+                        {% else %}
+                          <span class="text-muted">No valid href</span>
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="text-muted">No acquisition links available.</p>
+                {% endif %}
+
+                {% if item.odl.links %}
+                  <p class="mb-1"><strong>License Info Links:</strong></p>
+                  <ul class="list-unstyled">
+                    {% for link in item.odl.links %}
+                      {% if link.type == 'application/vnd.odl.info+json' and link.rel == 'self' %}
+                        <li>
+                          <a href="#" class="text-decoration-none"
+                             data-bs-toggle="modal"
+                             data-bs-target="#licenseModal"
+                             data-url="{{ link.href }}"
+                             data-rel="{{ link.rel }}">
+                            {{ link.rel | capitalize }}
+                          </a>
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="text-muted">No license links available.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No publications to display.</p>
+  {% endif %}
+</div>
+
+
+
+<!-- License Information Modal -->
+<div class="modal fade" id="licenseModal" tabindex="-1" aria-labelledby="licenseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="licenseModalLabel">License Information</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="license-info-content">
+          <!-- License information will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+<!-- JavaScript for handling License Modal -->
+
+<script>
+  // Handle click on License Links
+$(document).on('click', '[data-bs-toggle="modal"]', function(event) {
+    event.preventDefault();  // Prevent the default link behavior (no navigation)
+
+    var button = $(this);  // The button (or link) that triggered the modal
+    var licenseUrl = button.data('url');  // Get the URL for the license info document from the 'data-url' attribute
+    var licenseRel = button.data('rel');  // Get the relation for the link (optional)
+
+    console.log("License URL:", licenseUrl);
+    console.log("License Rel:", licenseRel);
+
+    if (!licenseUrl || !licenseRel) {
+        console.error("Missing URL or Rel data!");
+        return;
+    }
+
+    // Show the modal
+    $('#licenseModal').modal('show');
+
+    // Fetch license information via AJAX
+    $.ajax({
+        url: '/license-info',  // The Flask route that fetches license info
+        data: { url: licenseUrl },  // Send the license URL to the backend
+        success: function(data) {
+            console.log("License Data:", data);  // Log the data returned from the server
+            if (data.error) {
+                $('#license-info-content').html('<p class="text-danger">Error: ' + data.error + '</p>');
+            } else {
+                // Populate the modal with the license information
+                var content = '<h5>' + licenseRel + '</h5>';
+                content += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                $('#license-info-content').html(content);
+            }
+        },
+        error: function() {
+            console.log("Error fetching license information");
+            $('#license-info-content').html('<p class="text-danger">Failed to load license information.</p>');
+        }
+    });
+});
+</script>
+
+
+{% endblock %}

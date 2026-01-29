@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Upload EPUB or Cover{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-3">
+<div class="container my-4">
+  <h3 class="text-primary text-uppercase">
+    <i class="bi bi-cloud-arrow-up me-2"></i> ONIX & EPUB Utilities</h3>
+  <hr>
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5><i class="bi bi-upload me-2"></i> EPUB File Upload</h5>
+    </div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" class="mt-5">
+        <div class="mb-3">
+          <label for="epub_file" class="form-label">Select EPUB File</label>
+          <input class="form-control" type="file" name="epub_file" id="epub_file" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="catalog_id" class="form-label">Select Catalog</label>
+          <select class="form-select" id="catalog_id" name="catalog_id" required>
+            <option value="" selected disabled>Select a catalog</option>
+            {% for catalog in catalogs %}
+              <option value="{{ catalog.id }}">{{ catalog.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="base_url" class="form-label">Base URL for Public Access</label>
+          <input class="form-control" type="url" id="base_url" name="base_url"
+                placeholder="https://opds-tools.org/" required>
+        </div>
+
+        <button type="submit" class="btn btn-success">Upload to R2</button>
+      </form>
+    </div>
+  </div>
+
+  {% if epub_url and manifest_url %}
+  <div class="alert alert-info mt-3">
+    <h5>Upload Successful</h5>
+    <p><strong>EPUB URL:</strong><br><code>{{ epub_url }}</code></p>
+    <p><strong>Manifest URL:</strong><br><code>{{ manifest_url }}</code></p>
+    <p class="text-muted small">Paste the manifest URL into Thorium Web Reader to begin reading.</p>
+  </div>
+
+  <h6 class="text-success mt-4">✅ EPUB Uploaded</h6>
+  <p>
+    <strong>View EPUB at:</strong>
+    <a href="{{ epub_url }}" target="_blank">{{ epub_url }}</a><br>
+    <strong>View Publication Manifest at:</strong>
+    <a href="{{ manifest_url }}" target="_blank">{{ manifest_url }}</a>
+  </p>
+
+
+  <a href="{{ reader_launch_url }}" class="btn btn-primary mt-2" target="_blank">
+    <i class="bi bi-book-half me-1"></i> Open in Thorium Web Reader
+  </a>
+  {% endif %}
+
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mt-4">
+      {% for category, msg in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+</div>
+{% endblock %}

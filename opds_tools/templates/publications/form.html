@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Add New Publication</h2>
+  <form method="POST">
+    <div class="mb-3">
+      <label for="title" class="form-label">Title *</label>
+      <input type="text" class="form-control" name="title" id="title" required>
+    </div>
+    <div class="mb-3">
+      <label for="author" class="form-label">Author</label>
+      <input type="text" class="form-control" name="author" id="author">
+    </div>
+    <div class="mb-3">
+      <label for="isbn" class="form-label">ISBN</label>
+      <input type="text" class="form-control" name="isbn" id="isbn">
+    </div>
+    <div class="mb-3">
+      <label for="language" class="form-label">Language</label>
+      <input type="text" class="form-control" name="language" id="language">
+    </div>
+    <div class="mb-3">
+      <label for="publisher" class="form-label">Publisher</label>
+      <input type="text" class="form-control" name="publisher" id="publisher">
+    </div>
+    <button type="submit" class="btn btn-primary">Create</button>
+    <a href="{{ url_for('publications.list_publications') }}" class="btn btn-secondary ms-2">Cancel</a>
+  </form>
+</div>
+{% endblock %}

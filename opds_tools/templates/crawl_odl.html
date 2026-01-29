@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}ODL Catalog Crawler{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-3">
+  <div class="container my-4">
+    <h3 class="text-primary text-uppercase mt-4 mb-4"><i class="bi bi-gear me-2"></i>Crawl ODL Feed</h3>
+    <hr class="mt-0 mb-2">
+
+<div class="row mt-4">
+  <!-- Left Column: Feed Selection Form -->
+  <div class="col-md-6">
+    
+    <form method="POST" class="card shadow-sm p-4 bg-light">
+    <h5 class="card-title text-dark mb-2"><i class="bi bi-repeat me-2"></i>Saved ODL Feed Selection</h5>
+      <div class="mb-3">
+        <label for="feedSelect" class="form-label fw-bold">Select an ODL Feed</label>
+        <select name="feed_id" id="feedSelect" class="form-select" required>
+          <option value="" disabled selected>-- Choose a feed --</option>
+          {% for feed_item in feeds %}
+            <option value="{{ feed_item.id }}">{{ feed_item.name }} ({{ feed_item.url }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-repeat me-1"></i> Crawl and Store Publications
+      </button>
+    </form>
+  </div>
+
+  <!-- Right Column: Feed Info Card -->
+  <div class="col-md-6">
+    {% if feed %}
+      <div class="card shadow-sm p-3 bg-light">
+        <h5 class="card-title text-primary">Feed Details</h5>
+        <p><strong>Name:</strong> {{ feed.name }}</p>
+        <p><strong>URL:</strong> <code class="small">{{ feed.url }}</code></p>
+        <p><strong>Last Updated:</strong> {{ feed.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+
+        <hr>
+        <h6 class="text-muted">Publication Types</h6>
+        {% if pubtype_counts %}
+          <ul class="mb-0">
+            {% for type, count in pubtype_counts.items() %}
+              <li><strong>{{ type | replace('http://schema.org/', '') }}:</strong> {{ count }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No publications found for this feed.</p>
+        {% endif %}
+
+        <hr>
+        <h6 class="text-muted">Formats</h6>
+        {% if format_counts %}
+          <ul class="mb-0">
+            {% for fmt, count in format_counts.items() %}
+              <li><strong>{{ fmt }}:</strong> {{ count }}</li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-muted">No format data available.</p>
+        {% endif %}
+
+        <div class="mt-3 text-end">
+          <a href="{{ url_for('odl_crawler.view_odl_publications', feed_id=feed.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-box-arrow-up-right me-1"></i> View Publications
+          </a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+</div>
+{% endblock %}

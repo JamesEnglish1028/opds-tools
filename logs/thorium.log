@@ -1,0 +1,24 @@
+
+> @edrlab/thorium-web@0.12.0 dev /Users/jamesenglish/Desktop/Projects/web_reader/thorium-web
+> next dev
+
+   ▲ Next.js 15.3.2
+   - Local:        http://localhost:3000
+   - Network:      http://10.174.13.135:3000
+   - Experiments (use with caution):
+     ✓ typedRoutes
+     ✓ webpackBuildWorker
+
+ ✓ Starting...
+ ✓ Ready in 2.3s
+ ○ Compiling / ...
+ ✓ Compiled / in 2.2s (4421 modules)
+ GET / 200 in 2480ms
+ ✓ Compiled /favicon.ico in 116ms (82 modules)
+ GET /favicon.ico 200 in 205ms
+ ○ Compiling /read ...
+ ✓ Compiled /read in 870ms (4693 modules)
+ GET /read?book=http%3A%2F%2Flocalhost%3A15080%2FaHR0cHM6Ly9vcGRzLXRvb2xzLm9yZy9jb250ZW50LzEvMC0zMDYtNDY4MDEtOC8wLTMwNi00NjgwMS04LmVwdWI/manifest.json 200 in 1133ms
+ GET /read?book=http%3A%2F%2Flocalhost%3A15080%2FczM6Ly9jb250ZW50L2NvbnRlbnQvMS85NzgxOTQzMjA4OTY4Lzk3ODE5NDMyMDg5NjguZXB1Yg/manifest.json 200 in 50ms
+ GET /read?book=http%3A%2F%2Flocalhost%3A15080%2FaHR0cHM6Ly9vcGRzLXRvb2xzLm9yZy9jb250ZW50LzEvQklTR19HdWlkZTIvQklTR19HdWlkZTIuZXB1Yg/manifest.json 200 in 57ms
+[?25h

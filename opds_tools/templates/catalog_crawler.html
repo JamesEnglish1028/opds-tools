@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Catalog Crawler{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4 px-3">
+  <div class="container my-4">
+    <h3 class="text-primary text-uppercase mt-4 mb-4"><i class="bi bi-gear me-2"></i>Crawl OPDS 2.0</h3>
+    <hr class="mt-0 mb-2">
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-light">
+      <h5 class="mb-0"><i class="bi bi-repeat me-2"></i> Crawl OPDS Catalog</h5>
+    </div>
+    <div class="card-body">
+      <form method="post" action="{{ url_for('crawler.catalog_crawler') }}">
+        <div class="mb-3">
+          <label for="start_url" class="form-label">Catalog URL to Crawl</label>
+          <input type="url" class="form-control" id="start_url" name="start_url"
+                 placeholder="https://example.com/catalog.json" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="catalog_id" class="form-label">Select a saved catalog to add publications to</label>
+          <select name="catalog_id" id="catalog_id" class="form-select" required>
+            <option value="">-- Choose Catalog --</option>
+            {% for catalog in catalogs %}
+              <option value="{{ catalog.id }}">{{ catalog.title }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" name="crawl" value="1" class="btn btn-primary">
+          <i class="bi bi-repeat me-2"></i> Start Crawl
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!--   View existing or search previosly stored  / crawled catalog -->
+<div class="card shadow-sm my-4">
+  <div class="card-body">
+    <h5 class="card-title">Search Publications From a Saved Catalog</h5>
+    <form method="post">
+      <div class="row g-2 mb-2">
+        <div class="col-md-3">
+          <select name="view_catalog_id" class="form-select" required>
+            <option value="">Select a saved catalog</option>
+            {% for catalog in catalogs %}
+              <option value="{{ catalog.id }}" {% if selected_catalog and selected_catalog.id == catalog.id %}selected{% endif %}>
+                {{ catalog.title }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input type="text" name="search_title" class="form-control" placeholder="Title">
+        </div>
+        <div class="col-md-2">
+          <input type="text" name="search_author" class="form-control" placeholder="Author">
+        </div>
+        <div class="col-md-2">
+          <input type="text" name="search_publisher" class="form-control" placeholder="Publisher">
+        </div>
+        <div class="col-md-3">
+          <label for="pub_type" class="form-label">Publication Type</label>
+          <select id="pub_type" name="pub_type" class="form-select">
+            <option value="">All</option>
+            <option value="http://schema.org/Book">Book</option>
+            <option value="http://schema.org/EBook">EBook</option>
+            <option value="http://schema.org/Periodical">Periodical</option>
+            <option value="http://schema.org/PublicationIssue">Issue</option>
+            <option value="http://schema.org/PublicationVolume">Volume</option>
+            <!-- Add more as needed -->
+          </select>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" name="view" class="btn btn-outline-primary">Search</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if selected_catalog %}
+  <div class="alert alert-info">
+    <div class="row">
+      <div class="col-md-6">
+        {{ publication_count }} publication{{ 's' if publication_count != 1 else '' }} found in <strong>{{ selected_catalog.title }}</strong>
+      </div>
+      {% if type_counts %}
+      <div class="col-md-6">
+        <strong>Publication Type Breakdown:</strong>
+        <ul class="mb-0 ps-3">
+          {% for t in type_counts %}
+            <li>{{ t.type.rsplit('/', 1)[-1] if t.type else 'Unknown' }}: {{ t.count }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+
+{% if search_title or search_author or search_publisher or pub_type %}
+<div class="alert alert-info d-flex justify-content-between align-items-center">
+  <div>
+    <strong>Filters applied:</strong>
+    <ul class="mb-0 ps-3">
+      {% if search_title %}<li><strong>Title:</strong> {{ search_title }}</li>{% endif %}
+      {% if search_author %}<li><strong>Author:</strong> {{ search_author }}</li>{% endif %}
+      {% if search_publisher %}<li><strong>Publisher:</strong> {{ search_publisher }}</li>{% endif %}
+      {% if pub_type %}<li><strong>Type:</strong> {{ pub_type.rsplit('/', 1)[-1] }}</li>{% endif %}
+    </ul>
+  </div>
+  <form method="post">
+    <input type="hidden" name="view_catalog_id" value="{{ selected_catalog.id }}">
+    <button type="submit" name="view" class="btn btn-outline-secondary btn-sm">Clear Filters</button>
+  </form>
+</div>
+{% endif %}
+
+{% if selected_catalog %}
+  <div class="mb-2 text-muted">
+    Showing {{ filtered_count }} publication{{ '' if filtered_count == 1 else 's' }}
+    {% if filtered_count > 100 %}(first 100 shown){% endif %}
+  </div>
+{% endif %}
+
+
+<!-- new publicartions from crawl -->
+
+{% if new_publications %}
+<div class="card shadow-sm my-4">
+  <div class="card-body">
+    <h5 class="card-title">
+      {% if selected_catalog %}
+        Publications from: {{ selected_catalog.title }}
+      {% else %}
+        Recently Crawled Publications
+      {% endif %}
+
+    </h5>Added Publications</h5>
+<div class="table-responsive">
+<table class="table table-bordered table-hover table-sm mt-3">
+  <thead class="table-light">
+    <tr>
+      <th>Identifier</th>
+      <th>Title</th>
+      <th>Author</th>
+      <th>Publisher</th>
+      <th>Language</th>
+      <th>Type</th>  <!-- Add this -->
+      <th>Created</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pub in new_publications %}
+    <tr>
+      <td>{{ pub.identifier }}</td>
+      <td>{{ pub.title }}</td>
+      <td>{{ pub.author }}</td>
+      <td>{{ pub.publisher }}</td>
+      <td>{{ pub.language }}</td>
+      <td>{{ pub.opds_json['publication_type'].rsplit('/', 1)[-1] if pub.opds_json['publication_type'] else '—' }}</td>
+      </td> <!-- New column -->
+      <td>{{ pub.created_at.strftime("%Y-%m-%d") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+</div>
+
+
+{% endblock %}

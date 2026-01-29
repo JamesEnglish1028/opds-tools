@@ -1,0 +1,15 @@
+{
+  "A01": "author",
+  "A02": "joint author",
+  "A38": "compiler",
+  "B01": "editor",
+  "B06": "illustrator",
+  "B20": "translator",
+  "B21": "adapter",
+  "B15": "photographer",
+  "A10": "director",
+  "A07": "cartographer",
+  "B04": "narrator",
+  "A44": "researcher",
+  "Z01": "other"
+}

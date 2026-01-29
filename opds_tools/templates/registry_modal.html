@@ -1,0 +1,43 @@
+<div class="modal-header">
+  <h5 class="modal-title" id="registryModalLabel">Select a Catalog from Registry</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body">
+  <ul class="nav nav-tabs mb-3" id="registryTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="remote-tab" data-bs-toggle="tab" data-bs-target="#remote" type="button" role="tab">
+        Remote Registry
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="local-tab" data-bs-toggle="tab" data-bs-target="#local" type="button" role="tab">
+        Local Registry
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <!-- Remote Registry Tab -->
+    <div class="tab-pane fade show active" id="remote" role="tabpanel">
+      <div class="mb-3">
+        <input type="text" id="registry-url" class="form-control" placeholder="Enter remote registry URL">
+      </div>
+      <div class="mb-3 text-end">
+        <button class="btn btn-outline-primary btn-sm" onclick="loadRegistry('remote')">Load Remote</button>
+      </div>
+      <ul id="remote-catalog-list" class="list-group"></ul>
+    </div>
+
+    <!-- Local Registry Tab -->
+    <div class="tab-pane fade" id="local" role="tabpanel">
+      <div class="mb-3">
+        <input type="text" id="local-registry-url" class="form-control" placeholder="/static/registry.json" value="/static/registry.json">
+      </div>
+      <div class="mb-3 text-end">
+        <button class="btn btn-outline-secondary btn-sm" onclick="loadRegistry('local')">Load Local</button>
+      </div>
+      <ul id="local-catalog-list" class="list-group"></ul>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">EPUB Reader</h5>
+    </div>
+    <div class="card-body p-0" style="height: 90vh;">
+      <iframe
+        src="http://localhost:3000" 
+        frameborder="0"
+        width="100%"
+        height="100%"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<!-- /read?book={{ book_url | urlencode }}" -->

@@ -1,0 +1,164 @@
+{% if error %}
+  <div class="modal-body text-danger">
+    {{ error }}
+  </div>
+{% else %}
+<div class="modal-header border-bottom-0">
+  <h5 class="modal-title text-uppercase d-flex align-items-center">
+    <i class="bi bi-file-lock me-2 fs-4 text-primary"></i> OPDS Authentication Document for {{ title }}
+  </h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+  <hr class="mt-2 mb-4">
+
+  <div class="modal-body">
+    <div class="mb-2">
+
+    {% if general_links %}
+      <div class = "container py-4"> 
+      <h5 class="text-uppercase d-flex align-items-center mt-4 mb-2">
+        <i class="bi bi-link me-2 text-secondary fs-5"></i> General Links
+      </h5>
+      <hr class="mb-3">
+    
+      <ul class="list-group">
+        {% for link in general_links %}
+        <div class="text-secondary">
+          <li class="list-group-item">
+
+            {% if link.rel == 'logo' %}
+              <div class="mt-2">Logo
+                <img src="{{ link.href }}" alt="Logo" style="max-height: 60px;">
+              </div>
+            {% else %} 
+              <div>
+                {% if link.rel == 'start' %}
+                  OPDS Catalog Link
+                {% elif link.rel == 'http://librarysimplified.org/rel/designated-agent/copyright' %}
+                  Copyright Agent
+                {% elif link.rel == 'http://librarysimplified.org/terms/rel/user-profile' %}
+                  User Profile
+                {% else %}
+                  <span>{{ link.rel }}</span>
+                {% endif %}
+              </div>
+
+              <div>
+                {% if link.type == 'text/html' %}
+                  <span class="badge bg-primary">Web Site</span>
+                {% elif link.type == 'application/atom+xml;profile=opds-catalog;kind=acquisition' %}
+                  <span class="badge bg-info text-dark">OPDS</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ link.type }}</span>
+                {% endif %}
+              </div>
+
+              <div>
+              
+                <a href="{{ link.href }}" target="_blank">{{ link.href }}</a>
+              </div>
+            {% endif %}
+
+          </li>
+          </div>
+        {% endfor %}
+      </ul>
+      </div>
+    {% endif %}
+
+    </div> <!-- card body -->
+
+    {% if extension_links %}
+      <h5 class="text-uppercase d-flex align-items-center mt-4 mb-2"><i class="bi bi-paperclip"></i>Extensions</h5>
+      <hr class="mb-3">
+      <ul class="list-group">
+        {% for link in extension_links %}
+          <li class="list-group-item">
+            <div>
+              {% if link.rel == 'http://librarysimplified.org/rel/designated-agent/copyright' %}
+                Copyright Agent
+              {% elif link.rel == 'http://librarysimplified.org/terms/rel/user-profile' %}
+                User Profile
+              {% else %}
+                <span>{{ link.rel }}</span>
+              {% endif %}
+            </div>
+
+            <div>
+              {% if link.type == 'text/html' %}
+                <span class="badge bg-primary">Web Site</span>
+              {% elif link.type == 'vnd.librarysimplified/user-profile+json' %}
+                <span class="badge bg-info text-dark">JSON</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ link.type }}</span>
+              {% endif %}
+            </div>
+
+            <div>
+              <strong>URL:</strong>
+              <a href="{{ link.href }}" target="_blank">{{ link.href }}</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if other_links %}
+      <h5 class="mt-3 text-uppercase py-4"><i class="bi bi-link"></i>Other Links</h5>
+      <hr class="mt-2 mb-4">
+      <ul class="list-group mb-3">
+        {% for link in other_links %}
+          <li class="list-group-item">
+            <div>
+              {% if link.rel == 'http://librarysimplified.org/rel/designated-agent/patron-password-reset' %}
+                <strong>Password Reset</strong>
+              {% elif link.rel == 'resgister' %}
+                <strong>User Registration</strong>>
+                <span class="badge bg-success">user-profile</span>
+              {% else %}
+                <span>{{ link.rel }}</span>
+              {% endif %}
+            </div>
+
+            <div>
+              {% if link.type == 'text/html' %}
+                <span class="badge bg-primary">Web Site</span>
+              {% elif link.type == 'application/atom+xml;profile=opds-catalog;kind=acquisition' %}
+                <span class="badge bg-info text-dark">OPDS</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ link.type }}</span>
+              {% endif %}
+            </div>
+
+            <div>
+              <strong>URL:</strong>
+              <a href="{{ link.href }}" target="_blank">{{ link.href }}</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if authentication_endpoints %}
+      <h5 class="mt-3 text-uppercase py-3"><i class="bi bi-person-badge"></i>Authentication Endpoints</h5>
+      <hr class="mt-2 mb-4">
+      {% for auth in authentication_endpoints %}
+        <div class="card mb-2">
+          <div class="card-body">
+            <p><strong>Authentication Type:</strong> {{ auth.type }}</p>
+            <p><strong>Description:</strong> {{ auth.description }}</p>
+            {% if auth.inputs %}
+              <ul>
+                {% for key, value in auth.inputs.items() %}
+                  <li><strong>{{ key }}:</strong> {{ value }}</li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+  </div>
+{% endif %}
+

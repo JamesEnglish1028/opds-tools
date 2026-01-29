@@ -1,0 +1,102 @@
+{% macro render_catalog_links(links, catalog_metadata) %}
+
+
+
+  <div class="accordion" id="catalogLinksAccordion">
+
+    {# -- AUTHENTICATION SECTION -- #}
+    {% set auth_links = [] %}
+    {% for link in links %}
+      {% if link.rel == 'authentication' or link.rel == 'http://opds-spec.org/auth/document' %}
+        {% set _ = auth_links.append(link) %}
+      {% endif %}
+    {% endfor %}
+
+    {% if auth_links|length > 0 or catalog_metadata.auth_document_url %}
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="heading-auth">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-auth" aria-expanded="true" aria-controls="collapse-auth">
+            <i class="bi bi-lock-fill me-2"></i> Authentication
+          </button>
+        </h2>
+        <div id="collapse-auth" class="accordion-collapse collapse show" aria-labelledby="heading-auth" data-bs-parent="#catalogLinksAccordion">
+          <div class="accordion-body">
+            <ul class="list-group list-group-flush">
+              {% for link in auth_links %}
+                <li class="list-group-item">
+                  <strong>rel:</strong> {{ link.rel }}<br/>
+                  <strong>href:</strong> <a href="{{ link.href }}" target="_blank" rel="noopener noreferrer">{{ link.href }}</a><br/>
+                  {% if link.type %}<strong>type:</strong> <span class="badge bg-secondary">{{ link.type }}</span>{% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+            {% if catalog_metadata.auth_document_url %}
+              <button 
+                class="btn btn-outline-primary mt-3" 
+                data-bs-toggle="modal" 
+                data-bs-target="#authDocModal"
+                onclick="loadAuthModal('{{ catalog_metadata.auth_document_url }}')"
+              >
+                <i class="bi bi-file-lock"></i> View Authentication Document
+              </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {# -- GROUP LINKS INTO TYPES -- #}
+    {% set groups = {'search': [], 'navigation': [], 'self': [], 'other': []} %}
+
+    {% for link in links %}
+      {% if link.rel == 'search' %}
+        {% set _ = groups['search'].append(link) %}
+      {% elif link.rel == 'self' %}
+        {% set _ = groups['self'].append(link) %}
+      {% elif link.rel in ['navigation', 'start', 'up', 'next', 'previous'] %}
+        {% set _ = groups['navigation'].append(link) %}
+      {% elif link.rel in ['authentication', 'http://opds-spec.org/auth/document'] %}
+        {# already handled above #}
+      {% else %}
+        {% set _ = groups['other'].append(link) %}
+      {% endif %}
+    {% endfor %}
+
+    {# -- LOOP THROUGH GROUPS -- #}
+    {% for group, items in groups.items() %}
+      {% if items|length > 0 %}
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="heading-{{ group }}">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ group }}" aria-expanded="false" aria-controls="collapse-{{ group }}">
+            {% if group == 'search' %}
+              <i class="bi bi-search me-2 text-primary"></i>
+            {% elif group == 'navigation' %}
+              <i class="bi bi-signpost-split me-2 text-success"></i>
+            {% elif group == 'self' %}
+              <i class="bi bi-info-circle me-2 text-muted"></i>
+            {% elif group == 'other' %}
+              <i class="bi bi-link-45deg me-2 text-secondary"></i>
+            {% endif %}
+            {{ group|capitalize }} Links
+          </button>
+          </h2>
+          <div id="collapse-{{ group }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ group }}" data-bs-parent="#catalogLinksAccordion">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                {% for link in items %}
+                  <li class="list-group-item">
+                    <strong>rel:</strong> {{ link.rel }}<br/>
+                    <strong>href:</strong> <a href="{{ link.href }}" target="_blank" rel="noopener noreferrer">{{ link.href }}</a><br/>
+                    {% if link.type %}<strong>type:</strong> <span class="badge bg-secondary">{{ link.type }}</span><br/>{% endif %}
+                    {% if link.title %}<strong>title:</strong> {{ link.title }}<br/>{% endif %}
+
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endmacro %}

@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "title": "Generated OPDS Catalog"
+  },
+  "publications": [
+    {
+      "metadata": {
+        "@type": "https://schema.org/Book",
+        "title": "Rebels, Saints, and Sinners",
+        "identifier": "urn:isbn:9781455610891",
+        "alternateIdentifier": "9781455610891",
+        "author": [
+          "Timothy Daiss"
+        ],
+        "contributor": [
+          {
+            "name": "Timothy Daiss",
+            "role": "author"
+          }
+        ],
+        "modified": "2025-06-17T16:47:54.304908",
+        "subject": [
+          {
+            "code": "HIS036010",
+            "name": "History / United States / State & Local / General",
+            "scheme": "https://www.bisg.org/#bisac"
+          },
+          {
+            "code": "BIO000000",
+            "name": "Biography & Autobiography / General",
+            "scheme": "https://www.bisg.org/#bisac"
+          }
+        ],
+        "language": "eng",
+        "publisher": {
+          "name": "Pelican Publishing"
+        }
+      },
+      "links": [
+        {
+          "rel": "self",
+          "href": "http://127.0.0.1:5000/uploads/9781455610891.json",
+          "type": "application/opds+json"
+        }
+      ],
+      "images": [
+        {
+          "href": "http://127.0.0.1:5000/uploads/9781455610891.jpg",
+          "type": "image/jpeg",
+          "width": 400,
+          "height": 600
+        }
+      ]
+    }
+  ]
+}

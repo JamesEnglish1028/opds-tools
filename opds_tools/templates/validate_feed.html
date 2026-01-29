@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Validate OPDS Feed{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">Validate an OPDS 2.0 Feed</h3>
+
+  <form method="POST" class="mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label for="feed_url" class="form-label">Feed URL</label>
+        <input type="url" id="feed_url" name="feed_url" class="form-control" placeholder="Enter OPDS feed URL" required value="{{ feed_url }}">
+      </div>
+      <div class="col-md-2">
+        <label for="max_pages" class="form-label">Max Pages</label>
+        <input type="number" id="max_pages" name="max_pages" class="form-control" placeholder="e.g. 5" min="1" value="{{ max_pages or '' }}">
+      </div>
+      <div class="col-md-auto d-flex gap-2">
+        <button type="submit" class="btn btn-primary" name="action" value="validate">Validate</button>
+        <button type="submit" class="btn btn-outline-secondary" name="action" value="clear">Clear</button>
+      </div>
+    </div>
+  </form>
+
+  {% if results %}
+    <form method="POST" action="{{ url_for('validate.validate_feed_view') }}" class="mb-3">
+      <input type="hidden" name="feed_url" value="{{ feed_url }}">
+      <input type="hidden" name="download_json" value="1">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">⬇️ Download JSON Report</button>
+    </form>
+
+    <div class="card mb-3">
+      <div class="card-header">Validation Summary</div>
+      <div class="card-body">
+        <p>✅ Pages validated: <strong>{{ results.summary.pages_validated }}</strong></p>
+        <p>📚 Publications checked: <strong>{{ results.summary.publication_count }}</strong></p>
+        <p class="text-danger">❌ Total errors: <strong>{{ results.summary.error_count }}</strong></p>
+      </div>
+    </div>
+
+    {% if results.feed_errors %}
+      <div class="card border-danger mb-3">
+        <div class="card-header bg-danger text-white">Feed Page Errors</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            {% for err in results.feed_errors %}
+              <li>
+                <strong>{{ err.url }}</strong>: {{ err.error }}
+                {% if err.details %}
+                  <details class="mt-1">
+                    <summary>View Details</summary>
+                    <pre class="small">{{ err.details | tojson(indent=2) }}</pre>
+                  </details>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+
+    {% if results.publication_errors %}
+      <div class="card border-warning">
+        <div class="card-header bg-warning text-dark">Publication Errors</div>
+        <div class="card-body">
+          {% for pub in results.publication_errors %}
+            <div class="mb-3 border-bottom pb-2">
+              <strong>{{ pub.title or "Untitled" }}</strong>
+              {% if pub.identifier %} <small class="text-muted">({{ pub.identifier }})</small>{% endif %}
+              <br>
+              <em>From: {{ pub.feed_url }}</em><br>
+              <code class="text-danger">{{ pub.error }}</code>
+              <details class="mt-2">
+                <summary>View Raw Publication JSON</summary>
+                <pre style="white-space: pre-wrap;">{{ pub.json | tojson(indent=2) }}</pre>
+              </details>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

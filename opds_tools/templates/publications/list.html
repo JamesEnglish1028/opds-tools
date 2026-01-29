@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Publications</h2>
+    <form class="d-flex" method="get">
+      <input class="form-control me-2" type="search" placeholder="Search..." name="q" value="{{ request.args.get('q', '') }}">
+      <button class="btn btn-outline-secondary" type="submit">Search</button>
+    </form>
+    <a href="{{ url_for('publications.create_publication') }}" class="btn btn-primary ms-3">+ Add Publication</a>
+  </div>
+
+  {% if publications %}
+    <div class="list-group">
+      {% for pub in publications %}
+        <a href="{{ url_for('publications.view_publication', id=pub.id) }}" class="list-group-item list-group-item-action">
+          <div class="d-flex justify-content-between">
+            <span><strong>{{ pub.title }}</strong> by {{ pub.author or 'Unknown' }}</span>
+            <small class="text-muted">{{ pub.language or 'n/a' }}</small>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">No publications found.</p>
+  {% endif %}
+</div>
+{% endblock %}

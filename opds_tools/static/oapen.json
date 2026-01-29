@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "title": "OAPEN Collection by Year and Language"
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://memo.oapen.org/api/opds/palace",
+      "type": "application/opds+json"
+    }
+  ],
+  "navigation": [
+    {
+      "title": "Before 2010 - English Only (2034 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/Ten_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "Before 2010 - Non English (2365 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/Ten_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2010–2015 - English Only (2748 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/Fifteen_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2010–2015 - Non English (1579 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/Fifteen_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2020 - English Only (1720 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/Twenty_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2020 - Non English (837 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/Twenty_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2021 - English Only (1837 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyOne_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2021 - Non English (1216 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyOne_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2022 - English Only (2071 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyTwo_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2022 - Non English (1213 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyTwo_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2023 - English Only (1949 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyThree_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2023 - Non English (1142 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyThree_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2024 - English Only (1374 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyFour_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2024 - Non English (642 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyFour_no_English.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2025 - English Only (0 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyFive_English_only.json",
+      "type": "application/opds+json"
+    },
+    {
+      "title": "2025 - Non English (0 titles)",
+      "href": "https://memo.oapen.org/file/Palace_Project/TwentyFive_no_English.json",
+      "type": "application/opds+json"
+    }
+  ]
+}

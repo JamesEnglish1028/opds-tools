@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flask (via Flask CLI)",
+      "type": "python",
+      "request": "launch",
+      "module": "flask",
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.flaskenv",
+      "args": [
+        "run",
+        "--no-debugger",
+        "--no-reload"
+      ],
+      "jinja": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}

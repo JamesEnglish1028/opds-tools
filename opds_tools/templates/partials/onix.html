@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Upload ONIX File</h2>
+  <form action="{{ url_for('onix.upload_onix') }}" method="POST" enctype="multipart/form-data">
+    <div class="mb-3">
+      <label for="onix_file" class="form-label">ONIX File</label>
+      <input class="form-control" type="file" id="onix_file" name="onix_file" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="base_url" class="form-label">Base URL for Content</label>
+      <input class="form-control" type="url" id="base_url" name="base_url" placeholder="http://example.com/uploads">
+    </div>
+
+    <div class="mb-3">
+      <label for="onix_version" class="form-label">ONIX Version</label>
+      <select class="form-select" id="onix_version" name="onix_version">
+        <option value="3.0" selected>3.0</option>
+        <option value="2.1">2.1</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="tag_format" class="form-label">Tag Format</label>
+      <select class="form-select" id="tag_format" name="tag_format">
+        <option value="reference" selected>Reference Tags</option>
+        <option value="short">Short Tags</option>
+      </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Upload and Convert</button>
+  </form>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="mt-4">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+</div>
+{% endblock %}

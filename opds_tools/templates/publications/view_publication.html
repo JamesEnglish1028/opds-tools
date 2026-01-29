@@ -1,0 +1,60 @@
+{% extends 'layout.html' %}
+{% block title %}Publication Details{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">{{ publication.title }}</h5>
+    </div>
+    <div class="card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Author</dt>
+        <dd class="col-sm-9">{{ publication.author or '—' }}</dd>
+
+        <dt class="col-sm-3">Language</dt>
+        <dd class="col-sm-9">{{ publication.language or '—' }}</dd>
+
+        <dt class="col-sm-3">Publisher</dt>
+        <dd class="col-sm-9">{{ publication.publisher or '—' }}</dd>
+
+        <dt class="col-sm-3">ISBN</dt>
+        <dd class="col-sm-9">{{ publication.isbn or '—' }}</dd>
+
+        <dt class="col-sm-3">Created</dt>
+        <dd class="col-sm-9">{{ publication.created_at.strftime('%Y-%m-%d %H:%M') if publication.created_at else '—' }}</dd>
+
+        <dt class="col-sm-3">From ONIX</dt>
+        <dd class="col-sm-9">{{ 'Yes' if publication.from_onix else 'No' }}</dd>
+
+        <dt class="col-sm-3">From EPUB</dt>
+        <dd class="col-sm-9">{{ 'Yes' if publication.from_epub else 'No' }}</dd>
+
+        <dt class="col-sm-3">EPUB URL</dt>
+        <dd class="col-sm-9">
+          {% if publication.epub_url %}<a href="{{ publication.epub_url }}" target="_blank">{{ publication.epub_url }}</a>{% else %}—{% endif %}
+        </dd>
+
+        <dt class="col-sm-3">Cover URL</dt>
+        <dd class="col-sm-9">
+          {% if publication.cover_url %}<a href="{{ publication.cover_url }}" target="_blank">{{ publication.cover_url }}</a>{% else %}—{% endif %}
+        </dd>
+
+        <dt class="col-sm-3">Manifest URL</dt>
+        <dd class="col-sm-9">
+          {% if publication.manifest_url %}<a href="{{ publication.manifest_url }}" target="_blank">{{ publication.manifest_url }}</a>{% else %}—{% endif %}
+        </dd>
+
+        <dt class="col-sm-3">OPDS JSON</dt>
+        <dd class="col-sm-9">
+          {% if publication.opds_json %}
+          <pre class="bg-light p-2 rounded small">{{ publication.opds_json | tojson(indent=2) }}</pre>
+          {% else %}—{% endif %}
+        </dd>
+      </dl>
+
+      <a href="{{ url_for('opds.list_publications') }}" class="btn btn-secondary">Back to List</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

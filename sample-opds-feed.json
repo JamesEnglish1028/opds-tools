@@ -1,0 +1,999 @@
+{
+  "metadata": {
+    "id": "v2directory:v2directory-page-1-of-323",
+    "title": "v2directory OPDS: V2directory - page 1 of 323",
+    "updated": "2025-05-21T20:08:17+00:00",
+    "author": {
+      "name": "http://v2dev.pressbooks.directory",
+      "uri": "http://v2dev.pressbooks.directory"
+    },
+    "icon": null,
+    "numberOfItems": 6453,
+    "itemsPerPage": 20,
+    "currentPage": 1
+  },
+  "links": [
+    {
+      "href": "https://v2dev.pressbooks.directory/opds?page=1",
+      "type": "application/opds+json",
+      "rel": "self"
+    },
+    {
+      "href": "https://v2dev.pressbooks.directory/opds?page=1",
+      "type": "application/opds+json",
+      "rel": "first"
+    },
+    {
+      "href": "https://v2dev.pressbooks.directory/opds?page=2",
+      "type": "application/opds+json",
+      "rel": "next"
+    },
+    {
+      "href": "https://v2dev.pressbooks.directory/opds?page=323",
+      "type": "application/opds+json",
+      "rel": "last"
+    }
+  ],
+  "publications": [
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "\"Overweight\" Bodies, Real and Imagined [First Edition]",
+        "author": {
+          "name": "Sarah Gilleman",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "ROTEL (Remixing Open Textbooks with an Equity Lens) Project",
+        "modified": "2025-01-24T21:06:58+00:00",
+        "description": "This compilation gathers OER sources on body weight, nutrition, and movement, and it also problematizes the cultural meaning of these readings.  Roughly, this anthology is divided into two parts--info...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://rotel.pressbooks.pub/overweight-bodies1/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://rotel.pressbooks.pub/app/uploads/sites/5/2023/02/Overweight-book-cover-final.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://rotel.pressbooks.pub/app/uploads/sites/5/2023/02/Overweight-book-cover-final-350x453.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1964276-02-1",
+        "title": "\"Overweight\" Bodies, Real and Imagined [Revised Edition]",
+        "author": {
+          "name": "Sarah Gilleman",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "ROTEL (Remixing Open Textbooks with an Equity Lens) Project",
+        "modified": "2025-01-24T23:08:37+00:00",
+        "description": "This compilation gathers OER sources on body weight, nutrition, and movement, and it also problematizes the cultural meaning of these readings.  Roughly, this anthology is divided into two parts--info...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://rotel.pressbooks.pub/overweight-bodies/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://rotel.pressbooks.pub/app/uploads/sites/81/2025/01/Cover_RotelProject_HCC-Overweight-RE-Gilleman.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://rotel.pressbooks.pub/app/uploads/sites/81/2025/01/Cover_RotelProject_HCC-Overweight-RE-Gilleman-350x453.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-946135-69-8",
+        "title": "\"The Death of Ivan Ilich\": An Electronic Study Edition of the Russian Text",
+        "author": {
+          "name": "Edited",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "University of Minnesota Libraries Publishing",
+        "modified": "2025-03-13T14:32:24+00:00",
+        "description": "The Russian text of \"The Death of Ivan Ilich\" is presented for study in various formats: accompanied by an English translation; fully glossed, with explanatory and interpretive annotations; and supple...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://open.lib.umn.edu/ivanilich/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://open.lib.umn.edu/app/uploads/sites/268/2022/08/806px-Ge_Tolstoy.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://open.lib.umn.edu/app/uploads/sites/268/2022/08/806px-Ge_Tolstoy-350x469.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "#ColourOurCollections",
+        "author": {
+          "name": "UCC Library",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "UCC Library",
+        "modified": "2024-02-22T16:44:27+00:00",
+        "description": "This book compiles all the #ColourOurCollections colouring books from Special Collections &#38; Archives in UCC Library, organised by year created. #ColourOurCollections is an annual international col...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://ucclibrary.pressbooks.pub/colourourcollections/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://ucclibrary.pressbooks.pub/app/uploads/sites/13/2022/04/ColourOurCollections.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://ucclibrary.pressbooks.pub/app/uploads/sites/13/2022/04/ColourOurCollections-350x467.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-998755-60-8",
+        "title": "1, 2, 3 Write!",
+        "author": {
+          "name": "Gay Monteverde",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "NSCC",
+        "modified": "2025-03-18T21:15:56+00:00",
+        "description": "Cover Design: Anne Sigrun&lt;br /&gt;&lt;br /&gt;&lt;em&gt;1, 2, 3 Write!&lt;/em&gt; provides step-by-step instruction to build college writing skills.  It combines comprehensive grammar and mechanics...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://pressbooks.nscc.ca/123write/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://pressbooks.nscc.ca/app/uploads/sites/231/2022/03/1-2-3-Write-cover-art-01-01.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://pressbooks.nscc.ca/app/uploads/sites/231/2022/03/1-2-3-Write-cover-art-01-01-350x558.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "1, 2, 3 Write!",
+        "author": {
+          "name": "Gay Monteverde",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "MHCC Library Press",
+        "modified": "2022-04-15T20:41:40+00:00",
+        "description": "Cover Design: Anne Sigrun&lt;br /&gt;&lt;br /&gt;&lt;em&gt;1, 2, 3 Write!&lt;/em&gt; provides step-by-step instruction to build college writing skills.  It combines comprehensive grammar and mechanics...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://mhcc.pressbooks.pub/monteverde/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://mhcc.pressbooks.pub/app/uploads/sites/14/2020/07/1-2-3-Write-cover-art-01-01.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://mhcc.pressbooks.pub/app/uploads/sites/14/2020/07/1-2-3-Write-cover-art-01-01-350x558.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "1, 2, 3 Write!",
+        "author": {
+          "name": "Gay Monteverde",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "NSCC",
+        "modified": "2023-05-30T20:49:36+00:00",
+        "description": "Cover Design: Anne Sigrun&lt;br /&gt;&lt;br /&gt;&lt;em&gt;1, 2, 3 Write!&lt;/em&gt; provides step-by-step instruction to build college writing skills.  It combines comprehensive grammar and mechanics...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://lbcc.pressbooks.pub/123write/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://lbcc.pressbooks.pub/app/uploads/sites/9/2023/05/1-2-3-Write-cover-art-01-01.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://lbcc.pressbooks.pub/app/uploads/sites/9/2023/05/1-2-3-Write-cover-art-01-01-350x558.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "9780995786271",
+        "title": "100 Ideas for Active Learning",
+        "author": {
+          "name": "Active Learning Network",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en-gb",
+        "publisher": "University of Sussex Library",
+        "modified": "2025-01-30T16:45:53+00:00",
+        "description": "100 Ideas for Active Learning is a practical handbook to inspire innovative educational experiences. It is for educators and curriculum designers who wish to apply active learning tools and strategies...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://openpress.sussex.ac.uk/ideasforactivelearning/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://openpress.sussex.ac.uk/app/uploads/sites/11/2022/07/100-Ideas-for-Active-Learning-v2.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://openpress.sussex.ac.uk/app/uploads/sites/11/2022/07/100-Ideas-for-Active-Learning-v2-350x436.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "101 exercices pour développer votre leadership",
+        "author": {
+          "name": "Céleste Grimard",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "fr",
+        "publisher": "Université du Québec à Montréal",
+        "modified": "2025-03-03T17:13:34+00:00",
+        "description": "Ce livre pratique vous propose 101 exercices pour vous aider à développer un leadership efficace. À travers des défis, des questions de réflexion et des notions d’interprétation, vous explorerez vos f...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://pressbooks.etsmtl.ca/101-exercices-leadership/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://pressbooks.etsmtl.ca/app/uploads/sites/49/2025/02/Couverture_REL_01-1.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://pressbooks.etsmtl.ca/app/uploads/sites/49/2025/02/Couverture_REL_01-1-350x467.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-55195-510-0",
+        "title": "19th Century European Art History",
+        "author": {
+          "name": "Megan Bylsma",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "",
+        "modified": "2024-12-09T22:49:17+00:00",
+        "description": "Part textbook, part shared knowledge, this book is the co-creation of the instructor and students of Red Deer Polytechnic's ART 305, 19th Century European Art History class.\n\nLicense: CC BY-NC-SA (Att...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://pressbooks.openeducationalberta.ca/19thcenturyart/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://pressbooks.openeducationalberta.ca/app/uploads/sites/76/2022/08/Real-Title-Tree.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://pressbooks.openeducationalberta.ca/app/uploads/sites/76/2022/08/Real-Title-Tree-350x520.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-55195-510-0",
+        "title": "19th Century European Art History",
+        "author": {
+          "name": "Megan Bylsma",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "",
+        "modified": "2024-02-25T04:41:03+00:00",
+        "description": "Part textbook, part shared knowledge, this book is the co-creation of the instructor and students of Red Deer Polytechnic's ART 305, 19th Century European Art History class.\n\nLicense: CC BY-NC-SA (Att...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://openeducationalberta.ca/19thcenturyart/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://openeducationalberta.ca/19thcenturyart/wp-content/uploads/sites/76/2022/08/Real-Title-Tree.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://openeducationalberta.ca/wp-content/uploads/sites/76/2022/08/Real-Title-Tree-350x520.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "2024 Innovation in the Construction Industry",
+        "author": {
+          "name": "Prof. Dossick's CM515 Spring 2024 Class",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "",
+        "modified": "2024-12-10T06:39:28+00:00",
+        "description": "A collection of case studies about how people adopt new technologies and change practices in design, construction, and operations of the built environment.\n\nLicense: CC BY-NC-ND (Attribution NonCommer...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://uw.pressbooks.pub/2024innovationcm515/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://uw.pressbooks.pub/app/uploads/sites/795/2024/05/option-5.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://uw.pressbooks.pub/app/uploads/sites/795/2024/05/option-5-350x480.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "21st Century Queer Fashion Brands",
+        "author": {
+          "name": "Kelly L. Reddy-Best",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "Iowa State University Digital Press",
+        "modified": "2024-05-01T23:51:25+00:00",
+        "description": "The purpose of this project is to document the history of each brand using the oral history method. We conducted oral histories with 24 brands with questions ranging from their own personal histories ...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://iastate.pressbooks.pub/queerfashionbrands/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://iastate.pressbooks.pub/app/uploads/sites/42/2020/11/QueerFashionBrands-cover.png",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://iastate.pressbooks.pub/app/uploads/sites/42/2020/11/QueerFashionBrands-cover-350x453.png",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "3D Printing in the K-12 Mathematics Classroom",
+        "author": {
+          "name": "Elana Reiser",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": " Fig Hollow Publishing",
+        "modified": "2022-09-30T21:17:35+00:00",
+        "description": "This book is for math teachers with little to no experience with 3D printing who would like to incorporate it into their classroom.\n\nLicense: CC BY-SA (Attribution ShareAlike)",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://pressbooks.pub/3dprintinginmath/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://pressbooks.pub/app/uploads/sites/4082/2016/11/by-Elana-Reiser1-page-001.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://pressbooks.pub/app/uploads/sites/4082/2016/11/by-Elana-Reiser1-page-001-350x547.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-946011-17-6 (Online); 978-1-946011-18-3 (PDF)",
+        "title": "A Bicentennial Crossroads: 200 Years of Continuity and Change in Rural Illinois",
+        "author": {
+          "name": "Matt Meacham",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "Windsor &amp; Downs Press",
+        "modified": "2023-11-07T16:07:12+00:00",
+        "description": "The Illinois tour of &lt;em&gt;Crossroads: Change in Rural America&lt;/em&gt;, a Museum on Main Street exhibition from the Smithsonian Institution Traveling Exhibition Service and Illinois Humanities,...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://iopn.library.illinois.edu/pressbooks/bicentennialcrossroads/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://iopn.library.illinois.edu/pressbooks/bicentennialcrossroads/wp-content/uploads/sites/34/2023/05/bicentennial_final_scaled-2.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://iopn.library.illinois.edu/pressbooks/wp-content/uploads/sites/34/2023/05/bicentennial_final_scaled-2-350x453.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "A Casebook for Comparative Politics",
+        "author": {
+          "name": "Mark L. Johnson",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "",
+        "modified": "2025-01-08T23:00:44+00:00",
+        "description": "A companion casebook for lower division/undergraduate courses in Comparative Government and Intro to Political Science.  Each chapter covers an individual case study country, with emphasis on key conc...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://minnstate.pressbooks.pub/comparativepoliticscases/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://minnstate.pressbooks.pub/app/uploads/sites/131/2024/12/Jan-2025-cover.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://minnstate.pressbooks.pub/app/uploads/sites/131/2024/12/Jan-2025-cover-350x467.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-63635-010-3",
+        "title": "A Christmas Carol",
+        "author": {
+          "name": "Timothy Krause",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "",
+        "modified": "2020-09-28T18:34:33+00:00",
+        "description": "This version of the classic holiday story has been slightly abridged and lightly adapted for advanced students of English language. The text includes comprehension checks, discussion questions, and co...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://openoregon.pressbooks.pub/achristmascarol/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://openoregon.pressbooks.pub/app/uploads/sites/106/2019/12/1.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://openoregon.pressbooks.pub/app/uploads/sites/106/2019/12/1-350x517.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "urn:isbn:",
+        "title": "A Christmas Carol",
+        "author": {
+          "name": "Timothy Krause",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "",
+        "modified": "2024-08-28T20:05:25+00:00",
+        "description": "This version of the classic holiday story has been slightly abridged and lightly adapted for advanced students of English language. The text includes comprehension checks, discussion questions, and co...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://uen.pressbooks.pub/christmascarol/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://uen.pressbooks.pub/app/uploads/sites/5/2021/11/1.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://uen.pressbooks.pub/app/uploads/sites/5/2021/11/1-350x517.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-942341-42-0",
+        "title": "A Concise Introduction to Logic",
+        "author": {
+          "name": "Craig DeLancey",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "Open SUNY Textbooks",
+        "modified": "2021-12-02T18:25:54+00:00",
+        "description": "&lt;a href=\"https://milneopentextbooks.org/concise-introduction-to-logic/\"&gt;Return to milneopentextbooks.org to download PDF and other versions of this text&lt;/a&gt;&lt;p&gt;&lt;i&gt;A Concise Intr...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://milnepublishing.geneseo.edu/concise-introduction-to-logic/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://milnepublishing.geneseo.edu/app/uploads/sites/4/2017/01/DeLancey-Cover.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://milnepublishing.geneseo.edu/app/uploads/sites/4/2017/01/DeLancey-Cover-350x453.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "@type": "http://schema.org/EBook",
+        "identifier": "978-1-63635-069-1",
+        "title": "A Different Road To College",
+        "author": {
+          "name": "Alise Lamoreaux",
+          "links": [
+            {
+              "href": null,
+              "type": "application/opds+json"
+            }
+          ]
+        },
+        "translator": "",
+        "language": "en",
+        "publisher": "Open Oregon Educational Resources",
+        "modified": "2020-11-13T20:42:22+00:00",
+        "description": "A Different Road To College: A Guide For Transitioning Non-Traditional Students is designed to introduce students to the contextual issues of college. Non-traditional students have an ever-growing pre...",
+        "belongsTo": {}
+      },
+      "links": [
+        {
+          "href": "",
+          "type": "application/opds+json",
+          "rel": "self"
+        },
+        {
+          "href": "https://openoregon.pressbooks.pub/collegetransition/",
+          "type": "application/epub+zip",
+          "rel": "http://opds-spec.org/acquisition"
+        }
+      ],
+      "images": [
+        {
+          "href": "https://openoregon.pressbooks.pub/app/uploads/sites/6/2016/08/Transitioning-to-College.jpg",
+          "type": "image/jpeg",
+          "height": 1400,
+          "width": 800
+        },
+        {
+          "href": "https://openoregon.pressbooks.pub/app/uploads/sites/6/2016/08/Transitioning-to-College-350x525.jpg",
+          "type": "image/jpeg",
+          "height": 700,
+          "width": 400
+        }
+      ]
+    }
+  ]
+}

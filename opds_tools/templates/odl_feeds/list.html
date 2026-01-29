@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Manage ODL Feeds{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3>Saved ODL Feeds</h3>
+<a href="{{ url_for('odl_utilities.odl_utilities') }}" class="btn btn-sm btn-primary mb-3">Back to ODL Utilities</a>
+<a href="{{ url_for('odl_utilities.new_odl_feed') }}" class="btn btn-sm btn-primary mb-3">+ New Feed</a>
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Name</th><th>URL</th><th>Username</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      {% for f in feeds %}
+      <tr>
+        <td>{{ f.name }}</td>
+        <td><a href="{{ f.url }}" target="_blank">{{ f.url }}</a></td>
+        <td>{{ f.username or '—' }}</td>
+        <td>
+          <a href="{{ url_for('odl_utilities.edit_odl_feed', id=f.id) }}" class="btn btn-sm btn-secondary">Edit</a>
+          <form method="post" action="{{ url_for('odl_utilities.delete_odl_feed', id=f.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ f.name }}?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="text-center text-muted">No feeds saved.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
