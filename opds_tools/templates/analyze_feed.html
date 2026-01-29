@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+{% block title %}Analyze OPDS Feed{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">📊 Analyze OPDS Feed Format & DRM</h3>
+  
+  <div class="alert alert-info">
+    <i class="bi bi-info-circle me-1"></i>
+    <strong>What this does:</strong> Pages through an OPDS feed and generates a report on publication formats (PDF, EPUB) and DRM types (Adobe, LCP, None) without performing validation.
+  </div>
+  
+  <div id="refreshNotice" class="alert alert-warning d-none">
+    <i class="bi bi-exclamation-triangle me-1"></i>
+    <strong>Still running?</strong> Large feeds can take several minutes. 
+    If the page appears stalled, the analysis is still running in the background. 
+    <strong>Try refreshing this page</strong> to see the completed results.
+  </div>
+
+  <form method="POST" class="mb-4" id="analyzeForm">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-6">
+        <label for="feed_url" class="form-label">Feed URL</label>
+        <input type="url" id="feed_url" name="feed_url" class="form-control" 
+               placeholder="Enter OPDS feed URL" required value="{{ feed_url }}">
+      </div>
+      <div class="col-md-2">
+        <label for="max_pages" class="form-label">Max Pages</label>
+        <input type="number" id="max_pages" name="max_pages" class="form-control" 
+               placeholder="e.g. 5" min="1" value="{{ max_pages or '' }}">
+      </div>
+      <div class="col-md-auto d-flex gap-2">
+        <button type="submit" class="btn btn-primary" name="action" value="analyze" id="analyzeBtn">
+          Analyze
+        </button>
+        <button type="submit" class="btn btn-outline-secondary" name="action" value="clear">Clear</button>
+      </div>
+    </div>
+  </form>
+  
+  <div id="loadingIndicator" class="alert alert-primary d-none" role="alert">
+    <div class="d-flex align-items-center">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <strong>Analyzing feed...</strong> This may take several minutes. Check the terminal for progress updates.
+    </div>
+  </div>
+  
+  <script>
+    document.getElementById('analyzeForm').addEventListener('submit', function(e) {
+      const action = document.activeElement.getAttribute('value');
+      if (action === 'analyze') {
+        document.getElementById('loadingIndicator').classList.remove('d-none');
+        document.getElementById('analyzeBtn').disabled = true;
+        // Show refresh notice after 30 seconds
+        setTimeout(function() {
+          const notice = document.getElementById('refreshNotice');
+          if (notice) {
+            notice.classList.remove('d-none');
+          }
+        }, 30000);
+      }
+    });
+  </script>
+
+  {% if results and results.get('in_progress') %}
+    <div class="alert alert-info">
+      <i class="bi bi-hourglass-split me-1"></i>
+      <strong>Analysis in progress.</strong> The feed is still being fetched and processed.
+      You can refresh this page after a minute to check for completed results.
+    </div>
+  {% endif %}
+
+  {% if results and results.get('error') %}
+    <div class="alert alert-danger">
+      <i class="bi bi-exclamation-circle me-1"></i>
+      <strong>Error:</strong> {{ results.error }}
+    </div>
+  {% endif %}
+
+  {% if results and results.get('summary') %}
+    <div class="d-flex gap-2 mb-3">
+      <form method="POST" action="{{ url_for('analyze.analyze_feed_view') }}">
+        <input type="hidden" name="feed_url" value="{{ feed_url }}">
+        <input type="hidden" name="max_pages" value="{{ max_pages or '' }}">
+        <input type="hidden" name="download_json" value="1">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">⬇️ Download JSON Report</button>
+      </form>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('analyze.analyze_feed_pdf') }}">
+        📄 Download PDF Report
+      </a>
+    </div>
+
+    <!-- Summary Card -->
+    <div class="card mb-3">
+      <div class="card-header bg-primary text-white">
+        <i class="bi bi-bar-chart me-1"></i> Analysis Summary
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <p class="mb-1"><strong>Total Publications:</strong></p>
+            <h4>{{ results.summary.total_publications }}</h4>
+          </div>
+          <div class="col-md-3">
+            <p class="mb-1"><strong>Pages Analyzed:</strong></p>
+            <h4>{{ results.summary.pages_analyzed }}</h4>
+          </div>
+          <div class="col-md-3">
+            <p class="mb-1"><strong>Unique Formats:</strong></p>
+            <h4>{{ results.summary.unique_formats }}</h4>
+          </div>
+          <div class="col-md-3">
+            <p class="mb-1"><strong>DRM Types:</strong></p>
+            <h4>{{ results.summary.unique_drm_types }}</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Format Availability Combinations Card -->
+    <div class="card mb-3">
+      <div class="card-header bg-warning text-dark">
+        <i class="bi bi-collection me-1"></i> Format Availability (Multi-Format Publications)
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          <small>Shows how many publications are available in each format combination (e.g., both EPUB & PDF vs. only one format)</small>
+        </p>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Format Combination</th>
+              <th>Count</th>
+              <th>% of Collection</th>
+              <th>Visual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in results.format_combo_stats %}
+            <tr>
+              <td>
+                <strong>{{ item.combination }}</strong>
+                {% if "+" in item.combination %}
+                  <span class="badge bg-primary ms-1">Multi-Format</span>
+                {% endif %}
+              </td>
+              <td><strong>{{ item.count }}</strong></td>
+              <td>{{ item.percentage }}%</td>
+              <td>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar 
+                    {% if '+' in item.combination %}bg-primary{% else %}bg-secondary{% endif %}" 
+                    role="progressbar" 
+                    style="width: {{ item.percentage }}%"
+                    aria-valuenow="{{ item.count }}" aria-valuemin="0" 
+                    aria-valuemax="{{ results.summary.total_publications }}">
+                    {{ item.percentage }}%
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Combined Format + DRM Distribution Card -->
+    <div class="card mb-3">
+      <div class="card-header bg-success text-white">
+        <i class="bi bi-grid-3x3-gap me-1"></i> Format + DRM Distribution
+      </div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>DRM Type</th>
+              <th>Count</th>
+              <th>% of Collection</th>
+              <th>Visual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in results.combined_stats %}
+            <tr>
+              <td><strong>{{ item.format }}</strong></td>
+              <td>
+                {% if item.drm == "NO_DRM" %}
+                  <span class="badge bg-success">No DRM</span>
+                {% elif item.drm == "ADOBE_DRM" %}
+                  <span class="badge bg-warning text-dark">Adobe DRM</span>
+                {% elif item.drm == "LCP_DRM" %}
+                  <span class="badge bg-info text-dark">LCP DRM</span>
+                {% elif item.drm == "N/A" %}
+                  <span class="badge bg-secondary">N/A</span>
+                {% else %}
+                  {{ item.drm }}
+                {% endif %}
+              </td>
+              <td><strong>{{ item.count }}</strong></td>
+              <td>{{ item.percentage }}%</td>
+              <td>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar 
+                    {% if item.drm == 'NO_DRM' %}bg-success
+                    {% elif item.drm == 'ADOBE_DRM' %}bg-warning
+                    {% elif item.drm == 'LCP_DRM' %}bg-info
+                    {% else %}bg-secondary
+                    {% endif %}" 
+                    role="progressbar" 
+                    style="width: {{ item.percentage }}%"
+                    aria-valuenow="{{ item.count }}" aria-valuemin="0" 
+                    aria-valuemax="{{ results.summary.total_publications }}">
+                    {{ item.percentage }}%
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Format Distribution Card -->
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="bi bi-file-earmark me-1"></i> Format Distribution (Summary)
+      </div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Format</th>
+              <th>Count</th>
+              <th>Percentage</th>
+              <th>Visual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for format, count in results.format_counts.items() %}
+            <tr>
+              <td><strong>{{ format }}</strong></td>
+              <td>{{ count }}</td>
+              <td>{{ "%.1f"|format((count / results.summary.total_publications * 100)) }}%</td>
+              <td>
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar" role="progressbar" 
+                       style="width: {{ (count / results.summary.total_publications * 100) }}%"
+                       aria-valuenow="{{ count }}" aria-valuemin="0" 
+                       aria-valuemax="{{ results.summary.total_publications }}">
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DRM Distribution Card (EPUBs) -->
+    {% if results.drm_counts %}
+    <div class="card mb-3">
+      <div class="card-header">
+        <i class="bi bi-shield-lock me-1"></i> DRM Distribution (EPUBs Only - Summary)
+      </div>
+      <div class="card-body">
+        {% set epub_total = results.format_counts.get('EPUB', 0) %}
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>DRM Type</th>
+              <th>Count</th>
+              <th>% of EPUBs</th>
+              <th>% of Collection</th>
+              <th>Visual</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for drm, count in results.drm_counts.items() %}
+            {% if drm != "N/A" %}
+            <tr>
+              <td>
+                {% if drm == "NO_DRM" %}
+                  <span class="badge bg-success">No DRM</span>
+                {% elif drm == "ADOBE_DRM" %}
+                  <span class="badge bg-warning text-dark">Adobe DRM</span>
+                {% elif drm == "LCP_DRM" %}
+                  <span class="badge bg-info text-dark">LCP DRM</span>
+                {% endif %}
+              </td>
+              <td>{{ count }}</td>
+              <td>
+                {% if epub_total > 0 %}
+                  {{ "%.1f"|format((count / epub_total * 100)) }}%
+                {% else %}
+                  N/A
+                {% endif %}
+              </td>
+              <td>
+                {{ "%.1f"|format((count / results.summary.total_publications * 100)) }}%
+              </td>
+              <td>
+                {% if epub_total > 0 %}
+                <div class="progress" style="height: 20px;">
+                  <div class="progress-bar 
+                    {% if drm == 'NO_DRM' %}bg-success
+                    {% elif drm == 'ADOBE_DRM' %}bg-warning
+                    {% elif drm == 'LCP_DRM' %}bg-info
+                    {% endif %}" 
+                    role="progressbar" 
+                    style="width: {{ (count / epub_total * 100) }}%"
+                    aria-valuenow="{{ count }}" aria-valuemin="0" 
+                    aria-valuemax="{{ epub_total }}">
+                  </div>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Page-by-Page Details (Collapsible) -->
+    <div class="card">
+      <div class="card-header">
+        <a class="text-decoration-none text-dark" data-bs-toggle="collapse" href="#pageDetails">
+          <i class="bi bi-chevron-down me-1"></i> Page-by-Page Details
+          {% if results.page_stats_truncated %}
+            <span class="badge bg-warning text-dark ms-2">Showing 25 of {{ results.page_stats_total }} pages</span>
+          {% endif %}
+        </a>
+      </div>
+      <div class="collapse" id="pageDetails">
+        <div class="card-body">
+          {% if results.page_stats_truncated %}
+            <div class="alert alert-info mb-3">
+              <i class="bi bi-info-circle me-1"></i>
+              Showing first 20 and last 5 pages only ({{ results.page_stats_total }} total). Download JSON for complete details.
+            </div>
+          {% endif %}
+          {% for page in results.page_stats_display %}
+            <div class="mb-3 pb-3 border-bottom">
+              <h6 class="text-truncate" title="{{ page.url }}">{{ page.url }}</h6>
+              {% if page.error %}
+                <p class="text-danger">❌ Error: {{ page.error }}</p>
+              {% else %}
+                <p class="mb-1"><strong>Publications:</strong> {{ page.publication_count }}</p>
+                <p class="mb-1"><strong>Individual Formats:</strong> {{ page.formats }}</p>
+                <p class="mb-1"><strong>Format Combinations:</strong> {{ page.format_combinations }}</p>
+                <p class="mb-1"><strong>DRM Types:</strong> {{ page.drm_types }}</p>
+                <p class="mb-1"><strong>Format+DRM:</strong> {{ page.combined }}</p>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+  {% endif %}
+</div>
+{% endblock %}

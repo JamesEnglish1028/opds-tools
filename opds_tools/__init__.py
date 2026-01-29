@@ -20,6 +20,7 @@ from .routes.uploads import uploads_bp
 from .routes.opds_crawler import crawler_bp
 from .routes.odl_crawler import odl_crawler_bp
 from .routes.validate import validate_bp
+from .routes.analyze import analyze_bp
 
 
 
@@ -69,5 +70,6 @@ def create_app():
     app.register_blueprint(crawler_bp)
     app.register_blueprint(odl_crawler_bp)
     app.register_blueprint(validate_bp)
+    app.register_blueprint(analyze_bp)
 
     return app

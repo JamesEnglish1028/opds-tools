@@ -2,6 +2,7 @@ import json
 import textwrap
 import re
 import requests
+import time
 from typing import Any, List, Optional
 from urllib.parse import urlparse
 
@@ -44,19 +45,23 @@ def is_valid_uri(value: Optional[str]) -> bool:
 def fetch_url_with_fallback(
     url: str, 
     accept_headers: Optional[List[str]] = None,
-    timeout: int = 10
+    timeout: int = 10,
+    max_retries: int = 3,
+    retry_delay: float = 2.0
 ) -> requests.Response:
     """
-    Fetch a URL with fallback Accept headers for compatibility with various OPDS servers.
+    Fetch a URL with fallback Accept headers and retry logic for reliability.
     
     Attempts to fetch with the primary Accept header first. If a 406 (Not Acceptable) 
-    error occurs, retries with fallback headers in order. If all headers fail or no 
-    headers are provided, falls back to no Accept header.
+    error occurs, retries with fallback headers in order. For other HTTP errors (404, 
+    500, 502, 503, etc.), retries up to max_retries times with exponential backoff.
     
     Args:
         url: The URL to fetch
         accept_headers: List of Accept headers to try in order. Defaults to [DEFAULT, FALLBACK]
         timeout: Request timeout in seconds
+        max_retries: Maximum number of retry attempts for transient errors
+        retry_delay: Initial delay between retries in seconds (doubles each retry)
         
     Returns:
         requests.Response: The successful response
@@ -71,29 +76,83 @@ def fetch_url_with_fallback(
     
     # Try each Accept header in order
     for accept_header in accept_headers:
-        try:
-            response = requests.get(url, headers={"Accept": accept_header}, timeout=timeout)
-            response.raise_for_status()
-            return response
-        except requests.exceptions.HTTPError as e:
-            # 406 Not Acceptable - try next header
-            if e.response.status_code == 406:
+        # Retry loop for transient errors
+        for attempt in range(max_retries):
+            try:
+                response = requests.get(url, headers={"Accept": accept_header}, timeout=timeout)
+                response.raise_for_status()
+                return response
+            except requests.exceptions.HTTPError as e:
+                status_code = e.response.status_code
+                
+                # 406 Not Acceptable - try next header (no retry)
+                if status_code == 406:
+                    print(f"⚠️  HTTP {status_code} (Not Acceptable) for {url} with Accept: {accept_header}")
+                    print(f"   Trying next Accept header...")
+                    last_error = e
+                    break  # Break retry loop, try next header
+                
+                # Transient errors that should be retried
+                if status_code in [404, 500, 502, 503, 504]:
+                    print(f"⚠️  HTTP {status_code} error fetching {url}")
+                    if attempt < max_retries - 1:
+                        delay = retry_delay * (2 ** attempt)  # Exponential backoff
+                        print(f"   Retrying in {delay:.1f}s... (attempt {attempt + 1}/{max_retries})")
+                        time.sleep(delay)
+                        last_error = e
+                        continue  # Retry with same header
+                    else:
+                        print(f"   Max retries ({max_retries}) reached for {url}")
+                        last_error = e
+                        break
+                
+                # Other HTTP errors should fail immediately
+                print(f"❌ HTTP {status_code} error fetching {url}: {str(e)}")
+                raise
+            except requests.exceptions.RequestException as e:
+                # Network errors, timeouts, etc.
+                print(f"⚠️  Network error fetching {url}: {str(e)}")
+                if attempt < max_retries - 1:
+                    delay = retry_delay * (2 ** attempt)
+                    print(f"   Retrying in {delay:.1f}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(delay)
+                    last_error = e
+                    continue
+                else:
+                    print(f"   Max retries ({max_retries}) reached for {url}")
+                    last_error = e
+                    break
+            except Exception as e:
                 last_error = e
-                continue
-            # Other HTTP errors should fail immediately
-            raise
-        except Exception as e:
-            last_error = e
-            continue
+                print(f"❌ Unexpected error fetching {url}: {str(e)}")
+                break
     
     # Final fallback: try without Accept header
-    try:
-        response = requests.get(url, timeout=timeout)
-        response.raise_for_status()
-        return response
-    except Exception as e:
-        # If this also fails, raise the last error we encountered
-        raise last_error or e
+    print(f"🔄 Trying {url} without Accept header as final fallback...")
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=timeout)
+            response.raise_for_status()
+            print(f"✅ Success fetching {url} (no Accept header)")
+            return response
+        except requests.exceptions.HTTPError as e:
+            status_code = e.response.status_code
+            print(f"⚠️  HTTP {status_code} error fetching {url} (no Accept header)")
+            if status_code in [404, 500, 502, 503, 504] and attempt < max_retries - 1:
+                delay = retry_delay * (2 ** attempt)
+                print(f"   Retrying in {delay:.1f}s... (attempt {attempt + 1}/{max_retries})")
+                time.sleep(delay)
+                continue
+            else:
+                last_error = e
+                break
+        except Exception as e:
+            last_error = e
+            break
+    
+    # If everything failed, raise the last error we encountered
+    print(f"❌ All retry attempts failed for {url}")
+    raise last_error or Exception(f"Failed to fetch {url} after all retries")
 
 
 def fetch_all_pages(
@@ -116,37 +175,62 @@ def fetch_all_pages(
     current_url = start_url
     visited_urls = set()
     page_count = 0
+    
+    print(f"\n{'='*60}")
+    print(f"📄 Starting OPDS feed pagination from: {start_url}")
+    if max_pages:
+        print(f"   Max pages limit: {max_pages}")
+    print(f"{'='*60}\n")
 
     while current_url and current_url not in visited_urls:
         if max_pages is not None and page_count >= max_pages:
+            print(f"⛔ Reached max pages limit ({max_pages}). Stopping pagination.")
             break
 
         visited_urls.add(current_url)
         page_count += 1
+        
+        print(f"📖 Fetching page {page_count}: {current_url}")
 
         try:
             response = fetch_url_with_fallback(current_url, accept_headers=accept_headers)
             data = response.json()
             feeds[current_url] = data
+            
+            # Log publications count
+            pub_count = len(data.get("publications", []))
+            print(f"✅ Page {page_count} fetched successfully: {pub_count} publications found")
+            
         except Exception as e:
+            print(f"❌ Error fetching page {page_count}: {str(e)}")
             feeds[current_url] = {"error": str(e)}
             break
 
         # Find next page link
+        links = data.get("links", [])
+        print(f"🔍 Looking for 'next' link in {len(links)} links...")
+        
         next_link = next(
             (
                 link.get("href")
-                for link in data.get("links", [])
+                for link in links
                 if link.get("rel") == "next" and link.get("href")
             ),
             None,
         )
 
         if not next_link:
+            print(f"🏁 No 'next' link found. Pagination complete.")
             break
-
+        
+        print(f"➡️  Found next page link: {next_link}")
         current_url = requests.compat.urljoin(current_url, next_link)
+        print(f"🔗 Resolved next URL: {current_url}\n")
 
+    print(f"\n{'='*60}")
+    print(f"✅ Pagination complete: Fetched {page_count} page(s)")
+    print(f"{'='*60}\n")
+    
     return feeds
 
 

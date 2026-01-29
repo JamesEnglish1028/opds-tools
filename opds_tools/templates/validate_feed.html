@@ -23,11 +23,16 @@
   </form>
 
   {% if results %}
-    <form method="POST" action="{{ url_for('validate.validate_feed_view') }}" class="mb-3">
-      <input type="hidden" name="feed_url" value="{{ feed_url }}">
-      <input type="hidden" name="download_json" value="1">
-      <button type="submit" class="btn btn-outline-secondary btn-sm">⬇️ Download JSON Report</button>
-    </form>
+    <div class="d-flex gap-2 mb-3">
+      <form method="POST" action="{{ url_for('validate.validate_feed_view') }}">
+        <input type="hidden" name="feed_url" value="{{ feed_url }}">
+        <input type="hidden" name="download_json" value="1">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">⬇️ Download JSON Report</button>
+      </form>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('validate.validate_feed_pdf') }}">
+        📄 Download PDF Report
+      </a>
+    </div>
 
     <div class="card mb-3">
       <div class="card-header">Validation Summary</div>
