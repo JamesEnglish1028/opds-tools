@@ -1,5 +1,6 @@
 import json
 import textwrap
+import re
 import requests
 from typing import Any, List, Optional
 from urllib.parse import urlparse
@@ -15,10 +16,29 @@ FALLBACK_ACCEPT_HEADER = "application/json"
 
 
 def is_valid_uri(value: Optional[str]) -> bool:
-    if not value:
+    """
+    Validate if a value is a valid URI (URL or URN).
+    
+    Supports both traditional URLs and URNs:
+    - URLs: https://example.com/book/123
+    - URNs: urn:isbn:9791221503265, urn:oclc:123456, uuid:..., doi:...
+    
+    Per RFC 3986, a URI must have a scheme (letter followed by alphanumerics, +, -, or .)
+    followed by a colon.
+    
+    Args:
+        value: The identifier string to validate
+        
+    Returns:
+        True if the value is a valid URI/URN, False otherwise
+    """
+    if not value or not isinstance(value, str):
         return False
-    parsed = urlparse(value)
-    return bool(parsed.scheme and parsed.netloc)
+    
+    # RFC 3986: scheme = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+    # A valid URI must start with a scheme followed by a colon
+    scheme_match = re.match(r'^[a-zA-Z][a-zA-Z0-9+\-.]*:', value)
+    return bool(scheme_match)
 
 
 def fetch_url_with_fallback(
