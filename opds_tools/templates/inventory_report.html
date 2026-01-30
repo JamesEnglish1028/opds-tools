@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}OPDS Inventory Report Generator{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4 px-3">
+  <div class="container my-4">
+    <h3 class="text-primary text-uppercase mt-4 mb-4">
+      <i class="bi bi-file-earmark-spreadsheet me-2"></i>OPDS Inventory Report Generator
+    </h3>
+    <hr class="mt-0 mb-4">
+
+    <!-- Description -->
+    <div class="alert alert-info mb-4">
+      <i class="bi bi-info-circle me-2"></i>
+      <strong>Generate Inventory Reports:</strong> Provide an OPDS feed URL to crawl and generate a downloadable inventory report in CSV or XML format. 
+      The report includes publication identifiers, titles, authors, publishers, formats (EPUB, PDF, WebPub), and DRM types.
+    </div>
+
+    <!-- Input Form -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Feed Configuration</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" action="{{ url_for('inventory.inventory_report_view') }}">
+          <div class="mb-3">
+            <label for="feed_url" class="form-label">OPDS Feed URL <span class="text-danger">*</span></label>
+            <input 
+              type="url" 
+              class="form-control" 
+              id="feed_url" 
+              name="feed_url"
+              value="{{ feed_url }}"
+              placeholder="https://example.com/opds/catalog.json" 
+              required>
+            <small class="form-text text-muted">Enter the URL of the OPDS 2.0 feed to analyze</small>
+          </div>
+
+          <div class="row">
+            <div class="col-md-4">
+              <label for="max_pages" class="form-label">Max Pages (Optional)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="max_pages" 
+                name="max_pages"
+                value="{{ max_pages or '' }}"
+                min="1"
+                placeholder="Unlimited">
+              <small class="form-text text-muted">Limit the number of pages to crawl</small>
+            </div>
+            <div class="col-md-4">
+              <label for="username" class="form-label">Username (Optional)</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="username" 
+                name="username"
+                placeholder="Basic Auth Username">
+            </div>
+            <div class="col-md-4">
+              <label for="password" class="form-label">Password (Optional)</label>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="password" 
+                name="password"
+                placeholder="Basic Auth Password">
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <button type="submit" name="action" value="generate" class="btn btn-primary">
+              <i class="bi bi-gear me-2"></i>Generate Inventory
+            </button>
+            {% if inventory_data %}
+            <button type="submit" name="action" value="clear" class="btn btn-outline-secondary ms-2">
+              <i class="bi bi-x-circle me-2"></i>Clear Results
+            </button>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    {% if inventory_data or stats %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Inventory Summary</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="text-center p-3 border rounded">
+              <h2 class="text-primary mb-0">{{ stats.total_publications or 0 }}</h2>
+              <small class="text-muted">Total Publications</small>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center p-3 border rounded">
+              <h2 class="text-info mb-0">{{ stats.pages_crawled or 0 }}</h2>
+              <small class="text-muted">Pages Crawled</small>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center p-3 border rounded">
+              <h2 class="text-success mb-0">{{ stats.unique_formats or 0 }}</h2>
+              <small class="text-muted">Unique Formats</small>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="text-center p-3 border rounded">
+              <h2 class="text-warning mb-0">{{ stats.unique_drm_types or 0 }}</h2>
+              <small class="text-muted">DRM Types</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Buttons -->
+        <div class="mt-4 text-center">
+          <a href="{{ url_for('inventory.download_csv') }}" class="btn btn-success btn-lg me-2">
+            <i class="bi bi-file-earmark-spreadsheet me-2"></i>Download CSV
+          </a>
+          <a href="{{ url_for('inventory.download_xml') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-file-earmark-excel me-2"></i>Download Excel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Format Breakdown -->
+    {% if stats.format_counts %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>Format Distribution</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Format</th>
+                <th>Count</th>
+                <th>Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in stats.format_counts %}
+              <tr>
+                <td><strong>{{ item.type }}</strong></td>
+                <td>{{ item.count }}</td>
+                <td>
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: {{ (item.count / stats.total_publications * 100) | round(1) }}%"
+                         aria-valuenow="{{ item.count }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ stats.total_publications }}">
+                      {{ (item.count / stats.total_publications * 100) | round(1) }}%
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- DRM Breakdown -->
+    {% if stats.drm_counts %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-shield-lock me-2"></i>DRM Distribution</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>DRM Type</th>
+                <th>Count</th>
+                <th>Percentage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in stats.drm_counts %}
+              <tr>
+                <td><strong>{{ item.type }}</strong></td>
+                <td>{{ item.count }}</td>
+                <td>
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar bg-{{ 'success' if item.type == 'None' else 'warning' }}" 
+                         role="progressbar" 
+                         style="width: {{ (item.count / stats.total_publications * 100) | round(1) }}%"
+                         aria-valuenow="{{ item.count }}" 
+                         aria-valuemin="0" 
+                         aria-valuemax="{{ stats.total_publications }}">
+                      {{ (item.count / stats.total_publications * 100) | round(1) }}%
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Data Preview -->
+    {% if inventory_data %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-table me-2"></i>Data Preview (First 20 Records)</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover table-sm">
+            <thead>
+              <tr>
+                <th>Identifier</th>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Publisher</th>
+                <th>Format</th>
+                <th>DRM</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for record in inventory_data[:20] %}
+              <tr>
+                <td><code class="small">{{ record.identifier }}</code></td>
+                <td>{{ record.title }}</td>
+                <td>{{ record.author }}</td>
+                <td>{{ record.publisher }}</td>
+                <td><span class="badge bg-info">{{ record.format }}</span></td>
+                <td>
+                  {% if record.drm == 'None' %}
+                    <span class="badge bg-success">{{ record.drm }}</span>
+                  {% elif 'Unknown' in record.drm %}
+                    <span class="badge bg-secondary">{{ record.drm }}</span>
+                  {% else %}
+                    <span class="badge bg-warning">{{ record.drm }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if inventory_data|length > 20 %}
+        <p class="text-muted text-center mt-2">
+          <small>Showing 20 of {{ inventory_data|length }} total records. Download the full report to see all data.</small>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Errors Section -->
+    {% if errors %}
+    <div class="card shadow-sm mb-4 border-warning">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Errors ({{ errors|length }})</h5>
+      </div>
+      <div class="card-body">
+        <ul class="mb-0">
+          {% for error in errors[:10] %}
+          <li class="text-danger"><small>{{ error }}</small></li>
+          {% endfor %}
+        </ul>
+        {% if errors|length > 10 %}
+        <p class="text-muted mt-2 mb-0">
+          <small>Showing 10 of {{ errors|length }} errors.</small>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
