@@ -1,7 +1,9 @@
-from flask import Blueprint, request, render_template, Response, redirect, url_for, flash
+from flask import Blueprint, request, render_template, Response, redirect, url_for, flash, stream_with_context
 import json
 import time
 import io
+import queue
+import threading
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -253,4 +255,108 @@ def analyze_feed_pdf():
         pdf,
         mimetype="application/pdf",
         headers={"Content-Disposition": "attachment;filename=opds_analysis_report.pdf"},
+    )
+
+
+@analyze_bp.route("/analyze-feed/stream", methods=["GET"])
+def analyze_feed_stream():
+    """
+    Stream progress updates for feed analysis using Server-Sent Events.
+    """
+    feed_url = request.args.get("feed_url", "").strip()
+    max_pages_input = request.args.get("max_pages", "").strip()
+    
+    max_pages = None
+    if max_pages_input:
+        try:
+            max_pages = int(max_pages_input)
+            if max_pages < 1:
+                max_pages = None
+        except ValueError:
+            max_pages = None
+    
+    def generate():
+        """Generator for Server-Sent Events."""
+        global _last_analysis
+        
+        _last_analysis['in_progress'] = True
+        _last_analysis['started_at'] = time.time()
+        
+        # Create a queue for progress events
+        progress_queue = queue.Queue()
+        
+        def run_analysis():
+            """Run analysis in background thread."""
+            try:
+                def on_progress(event_type, data):
+                    progress_queue.put({'type': event_type, **data})
+                
+                results = analyze_feed_url(
+                    feed_url,
+                    max_pages=max_pages,
+                    progress_callback=on_progress
+                )
+                
+                # Limit page_stats for template rendering
+                page_stats_count = len(results.get('page_stats', []))
+                if page_stats_count > 25:
+                    page_stats = results.get('page_stats', [])
+                    results['page_stats_display'] = page_stats[:20] + page_stats[-5:]
+                    results['page_stats_truncated'] = True
+                    results['page_stats_total'] = page_stats_count
+                else:
+                    results['page_stats_display'] = results.get('page_stats', [])
+                    results['page_stats_truncated'] = False
+                
+                # Cache results
+                _last_analysis['results'] = results
+                _last_analysis['feed_url'] = feed_url
+                _last_analysis['max_pages'] = max_pages
+                _last_analysis['in_progress'] = False
+                _last_analysis['started_at'] = None
+                
+                # Signal completion
+                progress_queue.put({
+                    'type': 'complete',
+                    'summary': results.get('summary', {}),
+                    'total_publications': results.get('summary', {}).get('total_publications', 0),
+                    'pages_analyzed': results.get('summary', {}).get('pages_analyzed', 0)
+                })
+                
+            except Exception as e:
+                print(f"Error during analysis: {e}")
+                import traceback
+                traceback.print_exc()
+                _last_analysis['in_progress'] = False
+                _last_analysis['started_at'] = None
+                progress_queue.put({'type': 'error', 'message': str(e)})
+        
+        # Start background thread
+        thread = threading.Thread(target=run_analysis)
+        thread.daemon = True
+        thread.start()
+        
+        # Stream events from queue
+        while True:
+            try:
+                event = progress_queue.get(timeout=60)  # 60 second timeout
+                event_json = json.dumps(event)
+                yield f"data: {event_json}\n\n"
+                
+                # Stop if complete or error
+                if event['type'] in ['complete', 'error']:
+                    break
+                    
+            except queue.Empty:
+                # Send keepalive
+                yield f": keepalive\n\n"
+    
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
     )

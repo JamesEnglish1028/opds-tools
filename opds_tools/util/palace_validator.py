@@ -156,9 +156,10 @@ def fetch_url_with_fallback(
 
 
 def fetch_all_pages(
-    start_url: str, 
+    start_url: str,
     max_pages: Optional[int] = None,
-    accept_headers: Optional[List[str]] = None
+    accept_headers: Optional[List[str]] = None,
+    progress_callback=None
 ) -> dict[str, dict[str, Any]]:
     """
     Fetch all paginated OPDS feeds starting from `start_url`.
@@ -167,6 +168,7 @@ def fetch_all_pages(
         start_url: The starting URL of the OPDS feed
         max_pages: Maximum number of pages to fetch. None means fetch all.
         accept_headers: List of Accept headers to try. Uses smart fallback if None.
+        progress_callback: Optional callback function to report progress.
         
     Returns:
         Dictionary mapping URLs to feed data or error information
@@ -201,9 +203,25 @@ def fetch_all_pages(
             pub_count = len(data.get("publications", []))
             print(f"✅ Page {page_count} fetched successfully: {pub_count} publications found")
             
+            if progress_callback:
+                progress_callback('page_fetched', {
+                    'current_page': page_count,
+                    'url': current_url,
+                    'publications': pub_count,
+                    'max_pages': max_pages
+                })
+            
         except Exception as e:
             print(f"❌ Error fetching page {page_count}: {str(e)}")
             feeds[current_url] = {"error": str(e)}
+            
+            if progress_callback:
+                progress_callback('page_fetch_error', {
+                    'current_page': page_count,
+                    'url': current_url,
+                    'error': str(e),
+                    'max_pages': max_pages
+                })
             break
 
         # Find next page link

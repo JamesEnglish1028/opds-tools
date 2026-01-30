@@ -109,7 +109,8 @@ def detect_drm_type(publication: dict, format_type: str) -> str:
 
 def analyze_feed_url(
     url: str,
-    max_pages: int = None
+    max_pages: int = None,
+    progress_callback = None
 ) -> Dict[str, Any]:
     """
     Analyze an OPDS feed for format and DRM statistics.
@@ -117,6 +118,7 @@ def analyze_feed_url(
     Args:
         url: Starting OPDS feed URL
         max_pages: Maximum pages to fetch (None = all)
+        progress_callback: Optional callback function(event_type, data) for progress updates
         
     Returns:
         Dictionary with:
@@ -128,8 +130,14 @@ def analyze_feed_url(
     """
     # Fetch all pages
     print(f"\n🔍 Starting feed analysis...")
-    feeds = fetch_all_pages(url, max_pages=max_pages)
+    if progress_callback:
+        progress_callback('started', {'url': url, 'max_pages': max_pages})
+    
+    feeds = fetch_all_pages(url, max_pages=max_pages, progress_callback=progress_callback)
     print(f"📊 Processing {len(feeds)} pages of data...")
+    
+    if progress_callback:
+        progress_callback('pages_fetched', {'total_pages': len(feeds)})
     
     # Aggregated statistics
     format_counts = defaultdict(int)  # Individual format counts
@@ -149,6 +157,12 @@ def analyze_feed_url(
                 "url": page_url,
                 "error": feed_data["error"]
             })
+            if progress_callback:
+                progress_callback('page_error', {
+                    'page': idx,
+                    'url': page_url,
+                    'error': feed_data["error"]
+                })
             continue
         
         # Page-level statistics
@@ -158,6 +172,16 @@ def analyze_feed_url(
         page_combined = defaultdict(int)
         
         publications = feed_data.get("publications", [])
+        
+        # Send progress callback AFTER we know the publication count
+        if progress_callback:
+            progress_callback('page_processing', {
+                'current_page': idx,
+                'total_pages': len(feeds),
+                'url': page_url,
+                'publications': len(publications),
+                'total_publications': total_publications
+            })
         
         for pub in publications:
             total_publications += 1

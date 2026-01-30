@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container py-4">
-  <h3 class="mb-4">📊 Analyze OPDS Feed Format & DRM</h3>
+  <h3 class="mb-4">Analyze OPDS Feed Format & DRM</h3>
   
   <div class="alert alert-info">
     <i class="bi bi-info-circle me-1"></i>
@@ -30,7 +30,7 @@
                placeholder="e.g. 5" min="1" value="{{ max_pages or '' }}">
       </div>
       <div class="col-md-auto d-flex gap-2">
-        <button type="submit" class="btn btn-primary" name="action" value="analyze" id="analyzeBtn">
+        <button type="button" class="btn btn-primary" id="analyzeBtn">
           Analyze
         </button>
         <button type="submit" class="btn btn-outline-secondary" name="action" value="clear">Clear</button>
@@ -38,31 +38,26 @@
     </div>
   </form>
   
-  <div id="loadingIndicator" class="alert alert-primary d-none" role="alert">
-    <div class="d-flex align-items-center">
-      <div class="spinner-border spinner-border-sm me-2" role="status">
-        <span class="visually-hidden">Loading...</span>
+  <!-- Progress Section (shown during analysis) -->
+  <div class="card shadow-sm mb-4 d-none" id="progressCard">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Analyzing Feed...</h5>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <h6 id="currentPage">Initializing...</h6>
+        <div class="progress" style="height: 25px;">
+          <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" style="width: 0%">0%</div>
+        </div>
       </div>
-      <strong>Analyzing feed...</strong> This may take several minutes. Check the terminal for progress updates.
+      <div id="progressDetails" class="small text-muted">
+        <div><span class="badge bg-secondary me-2">Pages:</span> <span id="pagesCount">0</span></div>
+        <div><span class="badge bg-primary me-2">Publications:</span> <span id="pubsCount">0</span></div>
+        <div><span class="badge bg-warning me-2">Errors:</span> <span id="errorsCount">0</span></div>
+      </div>
     </div>
   </div>
-  
-  <script>
-    document.getElementById('analyzeForm').addEventListener('submit', function(e) {
-      const action = document.activeElement.getAttribute('value');
-      if (action === 'analyze') {
-        document.getElementById('loadingIndicator').classList.remove('d-none');
-        document.getElementById('analyzeBtn').disabled = true;
-        // Show refresh notice after 30 seconds
-        setTimeout(function() {
-          const notice = document.getElementById('refreshNotice');
-          if (notice) {
-            notice.classList.remove('d-none');
-          }
-        }, 30000);
-      }
-    });
-  </script>
 
   {% if results and results.get('in_progress') %}
     <div class="alert alert-info">
@@ -367,4 +362,146 @@
 
   {% endif %}
 </div>
+
+<script>
+  const analyzeBtn = document.getElementById('analyzeBtn');
+
+  if (analyzeBtn) {
+    analyzeBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+
+      const feedUrl = document.getElementById('feed_url').value;
+      const maxPages = document.getElementById('max_pages').value;
+      const maxPagesNum = maxPages ? parseInt(maxPages, 10) : null;
+
+      if (!feedUrl) {
+        alert('Please enter a feed URL');
+        return;
+      }
+
+      // Hide previous results if any
+      const resultsSection = document.querySelector('.card.mb-3');
+      if (resultsSection) {
+        resultsSection.style.display = 'none';
+      }
+
+      // Show progress card
+      const progressCard = document.getElementById('progressCard');
+      progressCard.classList.remove('d-none');
+
+      // Disable analyze button
+      this.disabled = true;
+
+      // Reset progress
+      document.getElementById('currentPage').textContent = 'Connecting to server...';
+      document.getElementById('progressBar').style.width = '0%';
+      document.getElementById('progressBar').textContent = '0%';
+      document.getElementById('pagesCount').textContent = '0';
+      document.getElementById('pubsCount').textContent = '0';
+      document.getElementById('errorsCount').textContent = '0';
+
+      // Build URL for EventSource (must be GET)
+      const params = new URLSearchParams();
+      params.append('feed_url', feedUrl);
+      if (maxPages) {
+        params.append('max_pages', maxPages);
+      }
+
+      const streamUrl = `/analyze-feed/stream?${params.toString()}`;
+      const eventSource = new EventSource(streamUrl);
+
+      let totalPages = null;
+      let totalPubs = 0;
+      let errors = 0;
+      let completionReceived = false;
+
+      eventSource.addEventListener('message', function (e) {
+        const data = JSON.parse(e.data);
+
+        switch (data.type) {
+          case 'started':
+            document.getElementById('currentPage').textContent = 'Starting feed analysis...';
+            break;
+
+          case 'page_fetched':
+            totalPubs += data.publications || 0;
+            document.getElementById('pagesCount').textContent = data.current_page;
+            document.getElementById('pubsCount').textContent = totalPubs;
+            document.getElementById('currentPage').textContent = `Fetched page ${data.current_page}${maxPagesNum ? ' of ' + maxPagesNum : ''}...`;
+
+            if (maxPagesNum) {
+              const progress = Math.min(100, (data.current_page / maxPagesNum) * 100);
+              document.getElementById('progressBar').style.width = progress + '%';
+              document.getElementById('progressBar').textContent = Math.round(progress) + '%';
+            }
+
+            break;
+
+          case 'page_fetch_error':
+            errors++;
+            document.getElementById('errorsCount').textContent = errors;
+            break;
+
+          case 'pages_fetched':
+            totalPages = data.total_pages;
+            document.getElementById('currentPage').textContent = `Found ${totalPages} page(s) to analyze`;
+            break;
+
+          case 'page_processing':
+            const pagesProcessed = data.current_page;
+            const pubsOnPage = data.publications || 0;
+            totalPubs += pubsOnPage;
+
+            const percentage = totalPages ? Math.round((pagesProcessed / totalPages) * 100) : (maxPagesNum ? Math.round((pagesProcessed / maxPagesNum) * 100) : 0);
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').textContent = percentage + '%';
+            document.getElementById('pagesCount').textContent = pagesProcessed;
+            document.getElementById('pubsCount').textContent = totalPubs;
+            document.getElementById('currentPage').textContent = `Processing page ${pagesProcessed}${totalPages ? ' of ' + totalPages : ''}...`;
+
+            break;
+
+          case 'page_error':
+            errors++;
+            document.getElementById('errorsCount').textContent = errors;
+            break;
+
+          case 'complete':
+            completionReceived = true;
+            document.getElementById('progressBar').classList.remove('progress-bar-animated');
+            document.getElementById('progressBar').classList.add('bg-success');
+            document.getElementById('currentPage').innerHTML = '<strong>✅ Analysis Complete!</strong>';
+            eventSource.close();
+
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+            break;
+
+          case 'error':
+            document.getElementById('currentPage').innerHTML = `<strong class="text-danger">Error: ${data.message}</strong>`;
+            document.getElementById('progressBar').classList.remove('progress-bar-animated');
+            document.getElementById('progressBar').classList.add('bg-danger');
+            eventSource.close();
+            document.getElementById('analyzeBtn').disabled = false;
+            break;
+
+          default:
+            break;
+        }
+      });
+
+      eventSource.onerror = function () {
+        if (!completionReceived) {
+          document.getElementById('currentPage').innerHTML = '<strong class="text-danger">Connection lost</strong>';
+          document.getElementById('progressBar').classList.remove('progress-bar-animated');
+          document.getElementById('progressBar').classList.add('bg-warning');
+        }
+        eventSource.close();
+        document.getElementById('analyzeBtn').disabled = false;
+      };
+    });
+  }
+</script>
+
 {% endblock %}
