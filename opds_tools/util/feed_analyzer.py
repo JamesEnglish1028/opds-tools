@@ -113,6 +113,43 @@ def has_sample_link(publication: dict) -> bool:
     return False
 
 
+def classify_publication_type(publication: dict) -> str:
+    """
+    Classify publication by metadata.@type (schema.org vocabulary).
+
+    Returns:
+        "Book", "Audiobook", "Periodical", or "Other"
+    """
+    metadata = publication.get("metadata", {})
+    pub_type = metadata.get("@type") or metadata.get("type")
+
+    if not pub_type:
+        return "Other"
+
+    if isinstance(pub_type, list):
+        type_values = pub_type
+    else:
+        type_values = [pub_type]
+
+    normalized = [str(t).strip().lower() for t in type_values if t]
+
+    def matches_any(targets: list[str]) -> bool:
+        for t in normalized:
+            for target in targets:
+                if t.endswith(target):
+                    return True
+        return False
+
+    if matches_any(["schema.org/book", "schema.org/ebook"]):
+        return "Book"
+    if matches_any(["schema.org/audiobook"]):
+        return "Audiobook"
+    if matches_any(["schema.org/periodical", "schema.org/publicationissue", "schema.org/article"]):
+        return "Periodical"
+
+    return "Other"
+
+
 def detect_drm_type(publication: dict, format_type: str) -> str:
     """
     Detect DRM type for a publication.
@@ -220,6 +257,7 @@ def analyze_feed_url(
     bearer_token_publications = 0
     audiobook_publications = 0
     sample_publications = 0
+    publication_type_counts = defaultdict(int)
     
     for idx, (page_url, feed_data) in enumerate(feeds.items(), 1):
         if idx % 10 == 0:  # Log every 10 pages
@@ -247,6 +285,7 @@ def analyze_feed_url(
         page_bearer_tokens = 0
         page_audiobooks = 0
         page_samples = 0
+        page_publication_types = defaultdict(int)
         
         publications = feed_data.get("publications", [])
         
@@ -292,6 +331,11 @@ def analyze_feed_url(
                 sample_publications += 1
                 page_samples += 1
 
+            # Classify publication metadata.type
+            pub_type = classify_publication_type(pub)
+            publication_type_counts[pub_type] += 1
+            page_publication_types[pub_type] += 1
+
             # Detect DRM (for each EPUB format)
             if "EPUB" in formats_list:
                 drm_type = detect_drm_type(pub, "EPUB")
@@ -331,7 +375,8 @@ def analyze_feed_url(
             "combined": {f"{k[0]}+{k[1]}": v for k, v in page_combined.items()},
             "bearer_token_publications": page_bearer_tokens,
             "audiobook_publications": page_audiobooks,
-            "sample_publications": page_samples
+            "sample_publications": page_samples,
+            "publication_types": dict(page_publication_types)
         })
     
     print(f"📈 Calculating statistics...")
@@ -373,6 +418,11 @@ def analyze_feed_url(
     print(f"   Format combinations: {len(format_combination_counts)}")
     print(f"   Pages with data: {len([p for p in page_stats if 'error' not in p])}")
     
+    publication_type_percentages = {
+        key: round((count / total_publications) * 100, 1) if total_publications > 0 else 0
+        for key, count in publication_type_counts.items()
+    }
+
     result = {
         "format_counts": dict(format_counts),
         "format_combination_counts": dict(format_combination_counts),
@@ -393,7 +443,9 @@ def analyze_feed_url(
             "audiobook_publications": audiobook_publications,
             "audiobook_percentage": round((audiobook_publications / total_publications) * 100, 1) if total_publications > 0 else 0,
             "sample_publications": sample_publications,
-            "sample_percentage": round((sample_publications / total_publications) * 100, 1) if total_publications > 0 else 0
+            "sample_percentage": round((sample_publications / total_publications) * 100, 1) if total_publications > 0 else 0,
+            "publication_type_counts": dict(publication_type_counts),
+            "publication_type_percentages": publication_type_percentages
         }
     }
     
