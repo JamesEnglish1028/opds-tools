@@ -1,7 +1,9 @@
-from flask import Blueprint, request, render_template, flash, Response, redirect, url_for
+from flask import Blueprint, request, render_template, flash, Response, redirect, url_for, stream_with_context
 from opds_tools.util.palace_validator import validate_feed_url
 import json
 import io
+import queue
+import threading
 
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -60,6 +62,13 @@ def validate_feed_view():
             _last_validation["results"] = results
             _last_validation["feed_url"] = feed_url
             _last_validation["max_pages"] = max_pages
+
+    else:
+        # GET request - show cached results if available
+        if _last_validation["results"]:
+            results = _last_validation["results"]
+            feed_url = _last_validation["feed_url"]
+            max_pages = _last_validation["max_pages"]
 
     return render_template("validate_feed.html", results=results, feed_url=feed_url, max_pages=max_pages)
 
@@ -147,4 +156,92 @@ def validate_feed_pdf():
         pdf,
         mimetype="application/pdf",
         headers={"Content-Disposition": "attachment;filename=opds_validation_report.pdf"},
+    )
+
+
+@validate_bp.route("/validate-feed/stream", methods=["GET"])
+def validate_feed_stream():
+    """
+    Stream progress updates for feed validation using Server-Sent Events.
+    """
+    feed_url = request.args.get("feed_url", "").strip()
+    max_pages_input = request.args.get("max_pages", "").strip()
+    
+    max_pages = None
+    if max_pages_input:
+        try:
+            max_pages = int(max_pages_input)
+            if max_pages < 1:
+                max_pages = None
+        except ValueError:
+            max_pages = None
+    
+    def generate():
+        """Generator for Server-Sent Events."""
+        global _last_validation
+        
+        # Create a queue for progress events
+        progress_queue = queue.Queue()
+        
+        def run_validation():
+            """Run validation in background thread."""
+            try:
+                def on_progress(event_type, data):
+                    progress_queue.put({'type': event_type, **data})
+                
+                results = validate_feed_url(
+                    feed_url,
+                    max_pages=max_pages,
+                    progress_callback=on_progress
+                )
+                
+                # Cache results
+                _last_validation['results'] = results
+                _last_validation['feed_url'] = feed_url
+                _last_validation['max_pages'] = max_pages
+                
+                # Signal completion
+                progress_queue.put({
+                    'type': 'complete',
+                    'summary': results['summary'],
+                    'error_count': results['summary']['error_count'],
+                    'feed_error_count': len(results.get('feed_errors', [])),
+                    'publication_error_count': len(results.get('publication_errors', []))
+                })
+                
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                progress_queue.put({'type': 'error', 'message': str(e)})
+        
+        # Start background thread
+        thread = threading.Thread(target=run_validation)
+        thread.daemon = True
+        thread.start()
+        
+        # Send initial status
+        yield f"data: {json.dumps({'type': 'started', 'feed_url': feed_url})}\n\n"
+        
+        # Stream events from queue
+        while True:
+            try:
+                event = progress_queue.get(timeout=60)  # 60 second timeout
+                yield f"data: {json.dumps(event)}\n\n"
+                
+                # Stop if complete or error
+                if event['type'] in ['complete', 'error']:
+                    break
+                    
+            except queue.Empty:
+                # Send keepalive
+                yield f": keepalive\n\n"
+    
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
     )

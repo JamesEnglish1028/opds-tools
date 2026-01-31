@@ -1,7 +1,10 @@
 # opds_tools/routes/inventory.py
 
-from flask import Blueprint, request, render_template, Response, flash, redirect, url_for
+from flask import Blueprint, request, render_template, Response, flash, redirect, url_for, stream_with_context
 import logging
+import json
+import queue
+import threading
 
 from opds_tools.util.inventory_generator import (
     crawl_feed_for_inventory,
@@ -228,3 +231,94 @@ def download_xml():
         logger.exception("Error generating Excel")
         flash(f"Error generating Excel report: {str(e)}", "danger")
         return redirect(url_for('inventory.inventory_report_view'))
+
+
+@inventory_bp.route("/inventory-report/stream", methods=["GET"])
+def inventory_report_stream():
+    """
+    Stream progress updates for inventory generation using Server-Sent Events.
+    """
+    feed_url = request.args.get("feed_url", "").strip()
+    max_pages_input = request.args.get("max_pages", "").strip()
+    username = request.args.get("username", "").strip()
+    password = request.args.get("password", "").strip()
+    
+    max_pages = None
+    if max_pages_input:
+        try:
+            max_pages = int(max_pages_input)
+            if max_pages < 1:
+                max_pages = None
+        except ValueError:
+            max_pages = None
+    
+    def generate():
+        """Generator for Server-Sent Events."""
+        global _last_inventory
+        
+        _last_inventory['in_progress'] = True
+        
+        # Create a queue for progress events
+        progress_queue = queue.Queue()
+        
+        def run_crawl():
+            """Run crawl in background thread."""
+            try:
+                def on_progress(event_type, data):
+                    progress_queue.put({'type': event_type, **data})
+                
+                result = crawl_feed_for_inventory(
+                    feed_url,
+                    max_pages=max_pages,
+                    username=username,
+                    password=password,
+                    progress_callback=on_progress
+                )
+                
+                # Cache results
+                _last_inventory['data'] = result['inventory']
+                _last_inventory['feed_url'] = feed_url
+                _last_inventory['stats'] = result['stats']
+                _last_inventory['errors'] = result['errors']
+                _last_inventory['max_pages'] = max_pages
+                _last_inventory['in_progress'] = False
+                
+                # Signal completion
+                progress_queue.put({'type': 'complete', 'stats': result['stats'], 'error_count': len(result['errors'])})
+                
+            except Exception as e:
+                logger.exception("Error during inventory generation")
+                _last_inventory['in_progress'] = False
+                progress_queue.put({'type': 'error', 'message': str(e)})
+        
+        # Start background thread
+        thread = threading.Thread(target=run_crawl)
+        thread.daemon = True
+        thread.start()
+        
+        # Send initial status
+        yield f"data: {json.dumps({'type': 'started', 'feed_url': feed_url})}\n\n"
+        
+        # Stream events from queue
+        while True:
+            try:
+                event = progress_queue.get(timeout=60)  # 60 second timeout
+                yield f"data: {json.dumps(event)}\n\n"
+                
+                # Stop if complete or error
+                if event['type'] in ['complete', 'error']:
+                    break
+                    
+            except queue.Empty:
+                # Send keepalive
+                yield f": keepalive\n\n"
+    
+    return Response(
+        stream_with_context(generate()),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive"
+        }
+    )

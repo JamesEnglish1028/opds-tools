@@ -111,6 +111,32 @@
             <h4>{{ results.summary.unique_drm_types }}</h4>
           </div>
         </div>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <p class="mb-1"><strong>Bearer Token DRM:</strong></p>
+            <h4>
+              {{ results.summary.bearer_token_publications }}
+              <small class="text-muted">({{ results.summary.bearer_token_percentage }}%)</small>
+            </h4>
+            <small class="text-muted">Publications with templated links</small>
+          </div>
+          <div class="col-md-4">
+            <p class="mb-1"><strong>Audiobooks:</strong></p>
+            <h4>
+              {{ results.summary.audiobook_publications }}
+              <small class="text-muted">({{ results.summary.audiobook_percentage }}%)</small>
+            </h4>
+            <small class="text-muted">Publications with audiobook+json links</small>
+          </div>
+          <div class="col-md-4">
+            <p class="mb-1"><strong>Publications with Samples:</strong></p>
+            <h4>
+              {{ results.summary.sample_publications }}
+              <small class="text-muted">({{ results.summary.sample_percentage }}%)</small>
+            </h4>
+            <small class="text-muted">Publications with sample acquisition links</small>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -473,8 +499,11 @@
             document.getElementById('currentPage').innerHTML = '<strong>✅ Analysis Complete!</strong>';
             eventSource.close();
 
+            // Reload the page without resubmitting form data
+            // Use history API to clear the POST and do a fresh GET load
             setTimeout(() => {
-              window.location.reload();
+              window.history.replaceState({}, document.title, window.location.pathname);
+              location.reload();
             }, 2000);
             break;
 

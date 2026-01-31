@@ -4,23 +4,61 @@
 {% block content %}
 <div class="container py-4">
   <h3 class="mb-4">Validate an OPDS 2.0 Feed</h3>
+  
+  <div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle me-1"></i>
+    <strong>What this does:</strong> Validates OPDS 2.0 feeds for schema compliance and publication structure. 
+    Checks feeds against JSON schemas and validates publication metadata including identifiers, links, and required fields.
+  </div>
 
-  <form method="POST" class="mb-4">
+  <form method="POST" class="mb-4" id="validateForm">
     <div class="row g-2 align-items-end">
       <div class="col-md-6">
-        <label for="feed_url" class="form-label">Feed URL</label>
-        <input type="url" id="feed_url" name="feed_url" class="form-control" placeholder="Enter OPDS feed URL" required value="{{ feed_url }}">
+        <label for="feed_url" class="form-label">Feed URL <span class="text-danger">*</span></label>
+        <input type="url" id="feed_url" name="feed_url" class="form-control" 
+               placeholder="https://example.com/opds/catalog.json" required value="{{ feed_url }}">
+        <small class="form-text text-muted">Enter the URL of the OPDS 2.0 feed to validate</small>
       </div>
       <div class="col-md-2">
         <label for="max_pages" class="form-label">Max Pages</label>
-        <input type="number" id="max_pages" name="max_pages" class="form-control" placeholder="e.g. 5" min="1" value="{{ max_pages or '' }}">
+        <input type="number" id="max_pages" name="max_pages" class="form-control" 
+               placeholder="e.g. 5" min="1" value="{{ max_pages or '' }}">
+        <small class="form-text text-muted">Limit pages to validate</small>
       </div>
       <div class="col-md-auto d-flex gap-2">
-        <button type="submit" class="btn btn-primary" name="action" value="validate">Validate</button>
-        <button type="submit" class="btn btn-outline-secondary" name="action" value="clear">Clear</button>
+        <button type="button" class="btn btn-primary" id="validateBtn">
+          <i class="bi bi-check-circle me-1"></i>Validate
+        </button>
+        <button type="submit" class="btn btn-outline-secondary" name="action" value="clear">
+          <i class="bi bi-x-circle me-1"></i>Clear
+        </button>
       </div>
     </div>
   </form>
+  
+  <!-- Progress Section (shown during validation) -->
+  <div class="card shadow-sm mb-4 d-none" id="progressCard">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Validating Feed...</h5>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <h6 id="currentPage">Initializing...</h6>
+        <div class="progress" style="height: 25px;">
+          <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+               role="progressbar" style="width: 0%">0%</div>
+        </div>
+      </div>
+      <div id="progressDetails" class="small text-muted">
+        <div><span class="badge bg-secondary me-2">Pages:</span> <span id="pagesCount">0</span></div>
+        <div><span class="badge bg-primary me-2">Publications:</span> <span id="pubsCount">0</span></div>
+        <div><span class="badge bg-danger me-2">Errors:</span> <span id="errorsCount">0</span></div>
+      </div>
+      <div id="progressLog" class="mt-3 p-2 bg-light rounded" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85em;">
+        <!-- Progress messages will appear here -->
+      </div>
+    </div>
+  </div>
 
   {% if results %}
     <div class="d-flex gap-2 mb-3">
@@ -87,4 +125,213 @@
     {% endif %}
   {% endif %}
 </div>
+
+<script>
+// Handle live progress updates via Server-Sent Events
+document.getElementById('validateBtn').addEventListener('click', function() {
+  const form = document.querySelector('#validateForm');
+  const formData = new FormData(form);
+  
+  const feedUrl = formData.get('feed_url');
+  if (!feedUrl) {
+    alert('Please provide a feed URL');
+    return;
+  }
+  
+  // Hide any existing results
+  const existingResults = document.querySelectorAll('.card.mb-3:not(#progressCard)');
+  existingResults.forEach(card => {
+    if (!card.querySelector('form')) {
+      card.style.display = 'none';
+    }
+  });
+  
+  // Show progress card
+  const progressCard = document.getElementById('progressCard');
+  progressCard.classList.remove('d-none');
+  
+  // Reset progress
+  document.getElementById('currentPage').textContent = 'Connecting to server...';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('progressBar').textContent = '0%';
+  document.getElementById('pagesCount').textContent = '0';
+  document.getElementById('pubsCount').textContent = '0';
+  document.getElementById('errorsCount').textContent = '0';
+  document.getElementById('progressLog').innerHTML = '';
+  
+  // Add log message function
+  function addLogMessage(message, type = 'info') {
+    const log = document.getElementById('progressLog');
+    const timestamp = new Date().toLocaleTimeString();
+    const badge = type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info';
+    log.innerHTML += `<div class="mb-1"><span class="badge bg-${badge}">${timestamp}</span> ${message}</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+  
+  addLogMessage('Establishing connection to server...');
+  
+  // Disable validate button
+  const validateBtn = document.getElementById('validateBtn');
+  validateBtn.disabled = true;
+  validateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating...';
+  
+  // Build URL with query parameters (EventSource only supports GET)
+  const params = new URLSearchParams();
+  params.append('feed_url', formData.get('feed_url') || '');
+  params.append('max_pages', formData.get('max_pages') || '');
+  
+  const streamUrl = '{{ url_for("validate.validate_feed_stream") }}?' + params.toString();
+  
+  // Create EventSource for Server-Sent Events
+  const eventSource = new EventSource(streamUrl);
+  
+  let totalPages = 0;
+  let totalPubs = 0;
+  let totalErrors = 0;
+  const maxPages = formData.get('max_pages') ? parseInt(formData.get('max_pages')) : null;
+  
+  eventSource.addEventListener('message', function(e) {
+    const data = JSON.parse(e.data);
+    
+    console.log('Received event:', data.type, data); // Debug logging
+    
+    switch(data.type) {
+      case 'started':
+        document.getElementById('currentPage').textContent = 'Starting feed validation...';
+        addLogMessage(`Started validating: ${data.feed_url}`);
+        break;
+        
+      case 'pages_fetched':
+        document.getElementById('currentPage').textContent = `Fetched ${data.total_pages} pages, now validating...`;
+        addLogMessage(`Fetched ${data.total_pages} pages`);
+        break;
+        
+      case 'page_fetched':
+        totalPages = data.current_page;
+        totalPubs += data.publications || 0;
+        document.getElementById('currentPage').textContent = `Fetching page ${data.current_page}...`;
+        document.getElementById('pagesCount').textContent = totalPages;
+        document.getElementById('pubsCount').textContent = totalPubs;
+        addLogMessage(`Fetched page ${data.current_page} (${data.publications} publications)`);
+        
+        // Update progress bar if max_pages is set
+        if (maxPages) {
+          const progress = Math.min(100, (data.current_page / maxPages) * 100);
+          document.getElementById('progressBar').style.width = progress + '%';
+          document.getElementById('progressBar').textContent = Math.round(progress) + '%';
+        }
+        break;
+        
+      case 'page_validating':
+        document.getElementById('currentPage').textContent = `Validating page ${data.page_number}...`;
+        addLogMessage(`Validating ${data.publications} publications on page ${data.page_number}`, 'info');
+        break;
+        
+      case 'validation_stage':
+        addLogMessage(`${data.stage} - Page ${data.page_number}`, 'info');
+        break;
+        
+      case 'validation_success':
+        if (data.stage === 'Publication Validation Complete') {
+          addLogMessage(`✅ ${data.stage} - ${data.publications_checked} publications validated`, 'success');
+        } else if (data.publications_checked) {
+          addLogMessage(`✅ ${data.stage} - ${data.publications_checked} publications`, 'success');
+        } else if (data.publication) {
+          addLogMessage(`✅ ${data.stage} - "${data.publication}"`, 'success');
+        } else {
+          addLogMessage(`✅ ${data.stage} passed`, 'success');
+        }
+        break;
+        
+      case 'validation_error':
+        totalErrors++;
+        document.getElementById('errorsCount').textContent = totalErrors;
+        
+        if (data.stage === 'Publication Validation Complete') {
+          addLogMessage(`⚠️ ${data.stage} - ${data.errors_found} error(s) in ${data.publications_checked} publications`, 'error');
+        } else if (data.publication) {
+          addLogMessage(`❌ ${data.stage} - "${data.publication}": ${data.error}`, 'error');
+        } else {
+          addLogMessage(`❌ ${data.stage}: ${data.error}`, 'error');
+        }
+        break;
+        
+      case 'page_fetch_error':
+      case 'page_validation_error':
+        totalErrors++;
+        document.getElementById('errorsCount').textContent = totalErrors;
+        addLogMessage(`Error on page ${data.page_number || 'unknown'}: ${data.error}`, 'error');
+        break;
+        
+      case 'error':
+        totalErrors++;
+        document.getElementById('errorsCount').textContent = totalErrors;
+        addLogMessage(`Error: ${data.message}`, 'error');
+        
+        // Check if this is a fatal error
+        if (!data.page_number) {
+          eventSource.close();
+          document.getElementById('currentPage').textContent = 'Error occurred';
+          document.getElementById('progressBar').classList.remove('progress-bar-animated', 'progress-bar-striped');
+          document.getElementById('progressBar').classList.add('bg-danger');
+          validateBtn.disabled = false;
+          validateBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Validate';
+        }
+        break;
+        
+      case 'complete':
+        console.log('Completion event received, summary:', data.summary);
+        eventSource.close();
+        document.getElementById('currentPage').textContent = 'Validation Complete!';
+        document.getElementById('progressBar').classList.remove('progress-bar-animated', 'progress-bar-striped');
+        
+        // Set color based on error count
+        if (data.error_count === 0) {
+          document.getElementById('progressBar').classList.add('bg-success');
+          addLogMessage(`✅ Validation complete! No errors found.`, 'success');
+        } else {
+          document.getElementById('progressBar').classList.add('bg-warning');
+          const feedErrors = data.feed_error_count ?? 0;
+          const pubErrors = data.publication_error_count ?? 0;
+          addLogMessage(`⚠️ Validation complete with ${data.error_count} errors (${feedErrors} feed, ${pubErrors} publication)`, 'error');
+        }
+        
+        document.getElementById('progressBar').style.width = '100%';
+        document.getElementById('progressBar').textContent = '100%';
+        
+        addLogMessage(`Validated ${data.summary.pages_validated} pages, ${data.summary.publication_count} publications`, 'info');
+        
+        // Re-enable button
+        validateBtn.disabled = false;
+        validateBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Validate';
+        
+        // Reload the page without resubmitting form data
+        // Use history API to clear the POST and do a fresh GET load
+        addLogMessage('Redirecting to display results...', 'info');
+        setTimeout(() => {
+          console.log('Reloading page now...');
+          window.history.replaceState({}, document.title, window.location.pathname);
+          location.reload();
+        }, 2000);
+        break;
+    }
+  });
+  
+  eventSource.onerror = function(err) {
+    console.error('EventSource error:', err);
+    eventSource.close();
+    
+    // Only show error if we haven't received a completion event
+    if (document.getElementById('currentPage').textContent !== 'Validation Complete!') {
+      addLogMessage('Connection error or stream ended unexpectedly', 'error');
+      document.getElementById('currentPage').textContent = 'Connection error';
+      document.getElementById('progressBar').classList.remove('progress-bar-animated', 'progress-bar-striped');
+      document.getElementById('progressBar').classList.add('bg-danger');
+    }
+    
+    validateBtn.disabled = false;
+    validateBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Validate';
+  };
+});
+</script>
 {% endblock %}

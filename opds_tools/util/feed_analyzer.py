@@ -66,24 +66,86 @@ def detect_formats(publication: dict) -> List[str]:
     return ["UNKNOWN"]
 
 
+def has_audiobook_link(publication: dict) -> bool:
+    """
+    Check if a publication has an acquisition link with type 'application/audiobook+json'.
+    
+    Returns:
+        True if audiobook link found, False otherwise
+    """
+    links = publication.get("links", [])
+    
+    for link in links:
+        rel = link.get("rel", "").lower()
+        link_type = link.get("type", "").lower()
+        
+        # Only check acquisition links
+        if rel not in (
+            "http://opds-spec.org/acquisition",
+            "http://opds-spec.org/acquisition/open-access",
+        ):
+            continue
+        
+        # Check for audiobook type
+        if "application/audiobook+json" in link_type:
+            return True
+    
+    return False
+
+
+def has_sample_link(publication: dict) -> bool:
+    """
+    Check if a publication has a sample acquisition link.
+    A link with rel='http://opds-spec.org/acquisition/sample' is considered a sample.
+    
+    Returns:
+        True if sample link found, False otherwise
+    """
+    links = publication.get("links", [])
+    
+    for link in links:
+        rel = link.get("rel", "")
+        
+        # Check for sample acquisition link
+        if rel == "http://opds-spec.org/acquisition/sample":
+            return True
+    
+    return False
+
+
 def detect_drm_type(publication: dict, format_type: str) -> str:
     """
     Detect DRM type for a publication.
     
+    A publication is considered DRM protected if any acquisition link has 'templated': true.
+    
     Checks:
-    - Link properties for DRM scheme
-    - Link rel types (license, borrow, etc.)
+    - Link properties for DRM scheme (LCP, Adobe)
+    - Link rel types (open-access indicator)
+    - Templated links (DRM protection indicator)
     
     Returns:
-        "NO_DRM", "ADOBE_DRM", "LCP_DRM", or "UNKNOWN_DRM"
+        "NO_DRM", "ADOBE_DRM", "LCP_DRM", "BEARER_TOKEN_DRM", or "UNKNOWN_DRM"
     """
-    if format_type != "EPUB":
+    # Only check DRM for EPUB and AUDIOBOOK formats
+    if format_type not in ("EPUB", "AUDIOBOOK"):
         return "N/A"
     
     links = publication.get("links", [])
+    has_templated_acquisition = False
     
     for link in links:
-        # Check properties for DRM scheme
+        # Only check acquisition links for DRM
+        rel = link.get("rel", "").lower()
+        
+        # Skip non-acquisition links
+        if rel not in (
+            "http://opds-spec.org/acquisition",
+            "http://opds-spec.org/acquisition/open-access",
+        ):
+            continue
+        
+        # Check properties for explicit DRM scheme (check first)
         properties = link.get("properties", {})
         
         # Common DRM indicators in properties
@@ -92,15 +154,24 @@ def detect_drm_type(publication: dict, format_type: str) -> str:
         if "adobe" in str(properties).lower() or "adept" in str(properties).lower():
             return "ADOBE_DRM"
         
-        # Check link rel for acquisition types
-        rel = link.get("rel", "")
+        # Check link rel for open-access (no DRM)
         if rel == "http://opds-spec.org/acquisition/open-access":
-            return "NO_DRM"
+            # Only if not templated - templated means DRM protected
+            if not link.get("templated"):
+                return "NO_DRM"
         
         # Check for DRM-free indicators in link type
         link_type = link.get("type", "")
         if "drm-free" in link_type.lower():
             return "NO_DRM"
+        
+        # Track if this acquisition link is templated (indicates DRM protection)
+        if link.get("templated") is True:
+            has_templated_acquisition = True
+    
+    # If we found templated acquisition links, it's DRM protected (bearer token)
+    if has_templated_acquisition:
+        return "BEARER_TOKEN_DRM"
     
     # Default: assume no DRM if no indicators found
     # (This is a heuristic - feeds should be explicit)
@@ -146,6 +217,9 @@ def analyze_feed_url(
     combined_counts = defaultdict(int)  # (format, drm) tuple keys
     page_stats = []
     total_publications = 0
+    bearer_token_publications = 0
+    audiobook_publications = 0
+    sample_publications = 0
     
     for idx, (page_url, feed_data) in enumerate(feeds.items(), 1):
         if idx % 10 == 0:  # Log every 10 pages
@@ -170,6 +244,9 @@ def analyze_feed_url(
         page_format_combinations = defaultdict(int)
         page_drm = defaultdict(int)
         page_combined = defaultdict(int)
+        page_bearer_tokens = 0
+        page_audiobooks = 0
+        page_samples = 0
         
         publications = feed_data.get("publications", [])
         
@@ -199,6 +276,22 @@ def analyze_feed_url(
             format_combination_counts[format_combo] += 1
             page_format_combinations[format_combo] += 1
             
+            # Detect bearer token access (templated links)
+            links = pub.get("links", [])
+            if any(link.get("templated") is True for link in links if isinstance(link, dict)):
+                bearer_token_publications += 1
+                page_bearer_tokens += 1
+            
+            # Detect audiobook publications
+            if has_audiobook_link(pub):
+                audiobook_publications += 1
+                page_audiobooks += 1
+            
+            # Detect publications with sample links
+            if has_sample_link(pub):
+                sample_publications += 1
+                page_samples += 1
+
             # Detect DRM (for each EPUB format)
             if "EPUB" in formats_list:
                 drm_type = detect_drm_type(pub, "EPUB")
@@ -208,6 +301,18 @@ def analyze_feed_url(
                 
                 # Combined format+DRM for EPUB
                 combined_key = ("EPUB", drm_type)
+                combined_counts[combined_key] += 1
+                page_combined[combined_key] += 1
+            
+            # Detect DRM for AUDIOBOOK format
+            if "AUDIOBOOK" in formats_list:
+                drm_type = detect_drm_type(pub, "AUDIOBOOK")
+                if drm_type != "N/A":
+                    drm_counts[drm_type] += 1
+                    page_drm[drm_type] += 1
+                
+                # Combined format+DRM for AUDIOBOOK
+                combined_key = ("AUDIOBOOK", drm_type)
                 combined_counts[combined_key] += 1
                 page_combined[combined_key] += 1
             
@@ -223,7 +328,10 @@ def analyze_feed_url(
             "formats": dict(page_formats),
             "format_combinations": dict(page_format_combinations),
             "drm_types": dict(page_drm),
-            "combined": {f"{k[0]}+{k[1]}": v for k, v in page_combined.items()}
+            "combined": {f"{k[0]}+{k[1]}": v for k, v in page_combined.items()},
+            "bearer_token_publications": page_bearer_tokens,
+            "audiobook_publications": page_audiobooks,
+            "sample_publications": page_samples
         })
     
     print(f"📈 Calculating statistics...")
@@ -279,7 +387,13 @@ def analyze_feed_url(
             "pages_with_errors": len([p for p in page_stats if "error" in p]),
             "unique_formats": len(format_counts),
             "unique_format_combinations": len(format_combination_counts),
-            "unique_drm_types": len([d for d in drm_counts.keys() if d != "N/A"])
+            "unique_drm_types": len([d for d in drm_counts.keys() if d != "N/A"]),
+            "bearer_token_publications": bearer_token_publications,
+            "bearer_token_percentage": round((bearer_token_publications / total_publications) * 100, 1) if total_publications > 0 else 0,
+            "audiobook_publications": audiobook_publications,
+            "audiobook_percentage": round((audiobook_publications / total_publications) * 100, 1) if total_publications > 0 else 0,
+            "sample_publications": sample_publications,
+            "sample_percentage": round((sample_publications / total_publications) * 100, 1) if total_publications > 0 else 0
         }
     }
     

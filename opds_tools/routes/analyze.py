@@ -176,6 +176,9 @@ def analyze_feed_pdf():
         ["Unique Formats", summary.get("unique_formats", 0)],
         ["Unique Format Combinations", summary.get("unique_format_combinations", 0)],
         ["Unique DRM Types", summary.get("unique_drm_types", 0)],
+        ["Bearer Token DRM Publications", summary.get("bearer_token_publications", 0)],
+        ["Audiobook Publications", summary.get("audiobook_publications", 0)],
+        ["Publications with Samples", summary.get("sample_publications", 0)],
     ]
     summary_table = Table(summary_data, hAlign="LEFT")
     summary_table.setStyle(TableStyle([

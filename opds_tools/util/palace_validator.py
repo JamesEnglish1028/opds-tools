@@ -255,7 +255,8 @@ def fetch_all_pages(
 def validate_feed_url(
     url: str, 
     max_pages: Optional[int] = None,
-    accept_headers: Optional[List[str]] = None
+    accept_headers: Optional[List[str]] = None,
+    progress_callback = None
 ) -> dict:
     """
     Fetch and validate a single OPDS feed URL with optional page limit and custom Accept headers.
@@ -264,24 +265,48 @@ def validate_feed_url(
         url: The OPDS feed URL to validate
         max_pages: Maximum number of pages to fetch. None means fetch all.
         accept_headers: List of Accept headers to try. Uses smart fallback if None.
+        progress_callback: Optional callback function(event_type, data) for progress updates
         
     Returns:
         Dictionary with feed_errors, publication_errors, and summary statistics
     """
-    feeds = fetch_all_pages(url, max_pages=max_pages, accept_headers=accept_headers)
+    if progress_callback:
+        progress_callback('started', {'url': url, 'max_pages': max_pages})
+    
+    feeds = fetch_all_pages(url, max_pages=max_pages, accept_headers=accept_headers, progress_callback=progress_callback)
+    
+    if progress_callback:
+        progress_callback('pages_fetched', {'total_pages': len(feeds)})
+    
     publication_errors = []
     feed_errors = []
     pub_count = 0
 
+    page_num = 0
     for page_url, feed in feeds.items():
+        page_num += 1
+        
         if "error" in feed:
             feed_errors.append({
                 "url": page_url,
                 "error": feed["error"]
             })
+            if progress_callback:
+                progress_callback('page_validation_error', {
+                    'page_number': page_num,
+                    'url': page_url,
+                    'error': feed["error"]
+                })
             continue
 
         # Run schema validation but continue even if it fails
+        if progress_callback:
+            progress_callback('validation_stage', {
+                'page_number': page_num,
+                'stage': 'JSON Schema Validation',
+                'url': page_url
+            })
+        
         is_valid_schema, schema_errors = validate_opds_feed(feed)
         if not is_valid_schema:
             feed_errors.append({
@@ -289,31 +314,78 @@ def validate_feed_url(
                 "error": "JSON Schema validation failed (continuing)",
                 "details": schema_errors
             })
+            if progress_callback:
+                progress_callback('validation_error', {
+                    'page_number': page_num,
+                    'stage': 'JSON Schema Validation',
+                    'url': page_url,
+                    'error': f"Schema validation failed with {len(schema_errors) if isinstance(schema_errors, list) else 1} error(s)"
+                })
+        else:
+            if progress_callback:
+                progress_callback('validation_success', {
+                    'page_number': page_num,
+                    'stage': 'JSON Schema Validation',
+                    'url': page_url
+                })
 
         # Proceed to Pydantic validation regardless
+        if progress_callback:
+            progress_callback('validation_stage', {
+                'page_number': page_num,
+                'stage': 'Pydantic Feed Structure Validation',
+                'url': page_url
+            })
+        
         try:
             publication_feed = PublicationFeedNoValidation.model_validate(feed)
+            if progress_callback:
+                progress_callback('validation_success', {
+                    'page_number': page_num,
+                    'stage': 'Pydantic Feed Structure Validation',
+                    'url': page_url
+                })
         except ValidationError as e:
             feed_errors.append({
                 "url": page_url,
                 "error": str(e)
             })
+            if progress_callback:
+                progress_callback('validation_error', {
+                    'page_number': page_num,
+                    'stage': 'Pydantic Feed Structure Validation',
+                    'url': page_url,
+                    'error': str(e)
+                })
             continue
 
+        # Notify processing this page
+        if progress_callback:
+            progress_callback('page_validating', {
+                'page_number': page_num,
+                'url': page_url,
+                'publications': len(publication_feed.publications),
+                'validation_stage': 'publications'
+            })
 
+        pub_validation_errors = 0
         for pub in publication_feed.publications:
             pub_count += 1
+            pub_metadata = pub.get("metadata", {})
+            pub_title = pub_metadata.get("title", "Untitled")
+            
+            # Pydantic publication validation
             try:
                 OPDS2Publication.model_validate(pub)
             except ValidationError as e:
-                metadata = pub.get("metadata", {})
+                pub_validation_errors += 1
                 links = pub.get("links", [])
 
                 publication_errors.append({
                     "feed_url": page_url,
-                    "identifier": metadata.get("identifier"),
-                    "title": metadata.get("title"),
-                    "author": metadata.get("author"),
+                    "identifier": pub_metadata.get("identifier"),
+                    "title": pub_metadata.get("title"),
+                    "author": pub_metadata.get("author"),
                     "self_url": next(
                         (link.get("href") for link in links if link.get("rel") == "self"),
                         None
@@ -321,17 +393,24 @@ def validate_feed_url(
                     "error": str(e),
                     "json": pub
                 })
+                if progress_callback:
+                    progress_callback('validation_error', {
+                        'page_number': page_num,
+                        'stage': 'Pydantic Publication Validation',
+                        'publication': pub_title,
+                        'error': str(e)
+                    })
                 continue
 
             # ✅ Check identifier URI validity
-            metadata = pub.get("metadata", {})
-            identifier = metadata.get("identifier")
+            identifier = pub_metadata.get("identifier")
             if not is_valid_uri(identifier):
+                pub_validation_errors += 1
                 publication_errors.append({
                     "feed_url": page_url,
                     "identifier": identifier,
-                    "title": metadata.get("title"),
-                    "author": metadata.get("author"),
+                    "title": pub_metadata.get("title"),
+                    "author": pub_metadata.get("author"),
                     "self_url": next(
                         (link.get("href") for link in pub.get("links", []) if link.get("rel") == "self"),
                         None
@@ -339,8 +418,34 @@ def validate_feed_url(
                     "error": "Invalid metadata.identifier — not a valid URI",
                     "json": pub
                 })
+                if progress_callback:
+                    progress_callback('validation_error', {
+                        'page_number': page_num,
+                        'stage': 'URI Validation',
+                        'publication': pub_title,
+                        'identifier': identifier,
+                        'error': 'Invalid metadata.identifier — not a valid URI'
+                    })
+        
+        # Summary for this page
+        if progress_callback:
+            if pub_validation_errors == 0:
+                progress_callback('validation_success', {
+                    'page_number': page_num,
+                    'stage': 'Publication Validation Complete',
+                    'url': page_url,
+                    'publications_checked': len(publication_feed.publications)
+                })
+            else:
+                progress_callback('validation_error', {
+                    'page_number': page_num,
+                    'stage': 'Publication Validation Complete',
+                    'url': page_url,
+                    'errors_found': pub_validation_errors,
+                    'publications_checked': len(publication_feed.publications)
+                })
 
-    return {
+    result = {
         "feed_errors": feed_errors,
         "publication_errors": publication_errors,
         "summary": {
@@ -349,3 +454,12 @@ def validate_feed_url(
             "error_count": len(publication_errors) + len(feed_errors)
         }
     }
+    
+    if progress_callback:
+        progress_callback('complete', {
+            'summary': result['summary'],
+            'total_errors': result['summary']['error_count']
+        })
+    
+    return result
+
