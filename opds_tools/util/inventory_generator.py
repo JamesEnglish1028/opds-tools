@@ -13,7 +13,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 logger = logging.getLogger(__name__)
 
 
-def crawl_feed_for_inventory(feed_url, max_pages=None, auth=None, username=None, password=None):
+def crawl_feed_for_inventory(feed_url, max_pages=None, auth=None, username=None, password=None, progress_callback=None):
     """
     Crawl OPDS feed and extract inventory data.
     
@@ -23,6 +23,7 @@ def crawl_feed_for_inventory(feed_url, max_pages=None, auth=None, username=None,
         auth: Tuple of (username, password) for basic auth
         username: Username for basic auth (alternative to auth tuple)
         password: Password for basic auth (alternative to auth tuple)
+        progress_callback: Optional callback function(event_type, data) for progress updates
     
     Returns:
         dict: {
@@ -55,6 +56,15 @@ def crawl_feed_for_inventory(feed_url, max_pages=None, auth=None, username=None,
         
         try:
             logger.info(f"Crawling page {pages_crawled + 1}: {url}")
+            
+            # Notify progress callback
+            if progress_callback:
+                progress_callback('page_started', {
+                    'page_number': pages_crawled + 1,
+                    'url': url,
+                    'total_publications': len(inventory)
+                })
+            
             response = requests.get(url, auth=auth, timeout=30)
             response.raise_for_status()
             feed_data = response.json()
@@ -65,6 +75,14 @@ def crawl_feed_for_inventory(feed_url, max_pages=None, auth=None, username=None,
             publications = feed_data.get('publications') or feed_data.get('items') or []
             logger.info(f"Found {len(publications)} publications on page {pages_crawled}")
             
+            # Notify publications found
+            if progress_callback:
+                progress_callback('publications_found', {
+                    'page_number': pages_crawled,
+                    'count': len(publications),
+                    'total_publications': len(inventory)
+                })
+            
             for pub in publications:
                 try:
                     record = extract_inventory_record(pub, url)
@@ -74,6 +92,8 @@ def crawl_feed_for_inventory(feed_url, max_pages=None, auth=None, username=None,
                     error_msg = f"Error extracting publication: {str(e)}"
                     logger.warning(error_msg)
                     errors.append(error_msg)
+                    if progress_callback:
+                        progress_callback('error', {'message': error_msg})
             
             # Follow next link
             next_url = None
