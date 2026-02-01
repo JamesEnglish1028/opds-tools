@@ -169,6 +169,8 @@ def analyze_feed_pdf():
     elements.append(Spacer(1, 12))
 
     summary = results.get("summary", {})
+    type_counts = summary.get("publication_type_counts", {})
+    type_percentages = summary.get("publication_type_percentages", {})
     summary_data = [
         ["Total Publications", summary.get("total_publications", 0)],
         ["Pages Analyzed", summary.get("pages_analyzed", 0)],
@@ -179,6 +181,10 @@ def analyze_feed_pdf():
         ["Bearer Token DRM Publications", summary.get("bearer_token_publications", 0)],
         ["Audiobook Publications", summary.get("audiobook_publications", 0)],
         ["Publications with Samples", summary.get("sample_publications", 0)],
+        ["Publication Types - Book", f"{type_counts.get('Book', 0)} ({type_percentages.get('Book', 0)}%)"],
+        ["Publication Types - Audiobook", f"{type_counts.get('Audiobook', 0)} ({type_percentages.get('Audiobook', 0)}%)"],
+        ["Publication Types - Periodical", f"{type_counts.get('Periodical', 0)} ({type_percentages.get('Periodical', 0)}%)"],
+        ["Publication Types - Other", f"{type_counts.get('Other', 0)} ({type_percentages.get('Other', 0)}%)"],
     ]
     summary_table = Table(summary_data, hAlign="LEFT")
     summary_table.setStyle(TableStyle([
