@@ -141,4 +141,39 @@ h4, h5, h6 {
   color: #fff;
 }
 
+/* Progress UI helpers */
+.progress-tall {
+  height: 25px;
+}
+
+.progress-short {
+  height: 20px;
+}
+
+.progress-log {
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+
+.progress-bar-initial {
+  width: 0;
+}
+
+.pre-wrap {
+  white-space: pre-wrap;
+}
+
+.card-header-gradient-drm {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: #fff;
+}
+
+/* Summary cards */
+.summary-card .card-header {
+  background-color: #0d6efd;
+  color: #fff;
+}
+
 

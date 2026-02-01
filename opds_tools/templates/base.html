@@ -1,10 +1,3 @@
-
-    {% import 'macros.html' as macros %}
-    <!--{% from 'macros.html' import render_facet_collections %}
-    {% from "macros.html" import render_schema_type_badge %}-->
-    {% import 'catalog_links_macro.html' as catalog_macros %}
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,6 +21,10 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="bg-light">
+  {% import 'macros.html' as macros %}
+  <!--{% from 'macros.html' import render_facet_collections %}
+  {% from "macros.html" import render_schema_type_badge %}-->
+  {% import 'catalog_links_macro.html' as catalog_macros %}
 
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
@@ -156,6 +153,24 @@
 
   {% block scripts %}
   {% endblock %}
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('[data-progress]').forEach((el) => {
+        const progress = parseFloat(el.getAttribute('data-progress'));
+        if (!Number.isNaN(progress)) {
+          el.style.width = `${progress}%`;
+          el.setAttribute('aria-valuenow', `${progress}`);
+        }
+
+        const valueNow = el.getAttribute('data-valuenow');
+        const valueMax = el.getAttribute('data-valuemax');
+        if (valueNow && valueMax) {
+          el.setAttribute('aria-valuetext', `${valueNow} of ${valueMax}`);
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>

@@ -46,9 +46,9 @@
     <div class="card-body">
       <div class="mb-3">
         <h6 id="currentPage">Initializing...</h6>
-        <div class="progress" style="height: 25px;">
-          <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-               role="progressbar" style="width: 0%">0%</div>
+        <div class="progress progress-tall">
+          <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated progress-bar-initial" 
+               role="progressbar" aria-label="Analysis progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</div>
         </div>
       </div>
       <div id="progressDetails" class="small text-muted">
@@ -88,8 +88,8 @@
     </div>
 
     <!-- Summary Card -->
-    <div class="card mb-3">
-      <div class="card-header bg-primary text-white">
+    <div class="card mb-3 summary-card">
+      <div class="card-header">
         <i class="bi bi-bar-chart me-1"></i> Analysis Summary
       </div>
       <div class="card-body">
@@ -208,13 +208,17 @@
               <td><strong>{{ item.count }}</strong></td>
               <td>{{ item.percentage }}%</td>
               <td>
-                <div class="progress" style="height: 20px;">
+                <div class="progress progress-short">
                   <div class="progress-bar 
                     {% if '+' in item.combination %}bg-primary{% else %}bg-secondary{% endif %}" 
                     role="progressbar" 
-                    style="width: {{ item.percentage }}%"
-                    aria-valuenow="{{ item.count }}" aria-valuemin="0" 
-                    aria-valuemax="{{ results.summary.total_publications }}">
+                    data-progress="{{ item.percentage }}"
+                    data-valuenow="{{ item.count }}"
+                    data-valuemax="{{ results.summary.total_publications }}"
+                    aria-label="Format combination: {{ item.combination }}"
+                    aria-valuemin="0" 
+                    aria-valuemax="100"
+                    aria-valuenow="0">
                     {{ item.percentage }}%
                   </div>
                 </div>
@@ -262,7 +266,7 @@
               <td><strong>{{ item.count }}</strong></td>
               <td>{{ item.percentage }}%</td>
               <td>
-                <div class="progress" style="height: 20px;">
+                <div class="progress progress-short">
                   <div class="progress-bar 
                     {% if item.drm == 'NO_DRM' %}bg-success
                     {% elif item.drm == 'ADOBE_DRM' %}bg-warning
@@ -270,9 +274,13 @@
                     {% else %}bg-secondary
                     {% endif %}" 
                     role="progressbar" 
-                    style="width: {{ item.percentage }}%"
-                    aria-valuenow="{{ item.count }}" aria-valuemin="0" 
-                    aria-valuemax="{{ results.summary.total_publications }}">
+                    data-progress="{{ item.percentage }}"
+                    data-valuenow="{{ item.count }}"
+                    data-valuemax="{{ results.summary.total_publications }}"
+                    aria-label="Format and DRM: {{ item.format }} - {{ item.drm }}"
+                    aria-valuemin="0" 
+                    aria-valuemax="100"
+                    aria-valuenow="0">
                     {{ item.percentage }}%
                   </div>
                 </div>
@@ -306,11 +314,15 @@
               <td>{{ count }}</td>
               <td>{{ "%.1f"|format((count / results.summary.total_publications * 100)) }}%</td>
               <td>
-                <div class="progress" style="height: 20px;">
+                <div class="progress progress-short">
                   <div class="progress-bar" role="progressbar" 
-                       style="width: {{ (count / results.summary.total_publications * 100) }}%"
-                       aria-valuenow="{{ count }}" aria-valuemin="0" 
-                       aria-valuemax="{{ results.summary.total_publications }}">
+                       data-progress="{{ (count / results.summary.total_publications * 100) }}"
+                       data-valuenow="{{ count }}"
+                       data-valuemax="{{ results.summary.total_publications }}"
+                       aria-label="Format distribution: {{ format }}"
+                       aria-valuemin="0" 
+                       aria-valuemax="100"
+                       aria-valuenow="0">
                   </div>
                 </div>
               </td>
@@ -365,16 +377,20 @@
               </td>
               <td>
                 {% if epub_total > 0 %}
-                <div class="progress" style="height: 20px;">
+                <div class="progress progress-short">
                   <div class="progress-bar 
                     {% if drm == 'NO_DRM' %}bg-success
                     {% elif drm == 'ADOBE_DRM' %}bg-warning
                     {% elif drm == 'LCP_DRM' %}bg-info
                     {% endif %}" 
                     role="progressbar" 
-                    style="width: {{ (count / epub_total * 100) }}%"
-                    aria-valuenow="{{ count }}" aria-valuemin="0" 
-                    aria-valuemax="{{ epub_total }}">
+                    data-progress="{{ (count / epub_total * 100) }}"
+                    data-valuenow="{{ count }}"
+                    data-valuemax="{{ epub_total }}"
+                    aria-label="EPUB DRM distribution: {{ drm }}"
+                    aria-valuemin="0" 
+                    aria-valuemax="100"
+                    aria-valuenow="0">
                   </div>
                 </div>
                 {% endif %}
