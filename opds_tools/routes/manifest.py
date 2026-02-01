@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 manifest_bp = Blueprint('manifest', __name__)
 
 
-@onix_bp.route("/upload-epub", methods=["GET", "POST"])
+@manifest_bp.route("/upload-epub", methods=["GET", "POST"])
 def upload_epub():
     import requests
     import base64

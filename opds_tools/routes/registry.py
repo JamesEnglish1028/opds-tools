@@ -2,8 +2,7 @@ import os
 import json
 import requests
 from flask import Blueprint, current_app, request, render_template, redirect, url_for, flash, jsonify
-from opds_tools.models import db
-from opds_tools.models.catalog import Catalog
+from opds_tools.models import db, Catalog
 import logging
 logger = logging.getLogger(__name__)
 

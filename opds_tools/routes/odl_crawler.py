@@ -1,9 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, flash, url_for
 import requests
 from datetime import datetime
-from opds_tools.models import db
-from opds_tools.models.odl_feed import ODLFeed
-from opds_tools.models.ODLpublications import ODLPublication
+from opds_tools.models import db, ODLFeed, ODLPublication
 from opds_tools.util.parser import extract_publications_with_odl
 from sqlalchemy import cast, String
 from sqlalchemy.dialects.postgresql import JSONB

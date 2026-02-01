@@ -21,7 +21,9 @@ from .routes.opds_crawler import crawler_bp
 from .routes.odl_crawler import odl_crawler_bp
 from .routes.validate import validate_bp
 from .routes.analyze import analyze_bp
+from .routes.analyze_odl import odl_analyze_bp
 from .routes.inventory import inventory_bp
+from .routes.manifest import manifest_bp
 
 
 
@@ -66,12 +68,14 @@ def create_app():
     app.register_blueprint(onix_bp, url_prefix="/onix")
     app.register_blueprint(opds_bp)
     app.register_blueprint(publications_bp, url_prefix="/pubs")
-    app.register_blueprint(epub_bp)
+    app.register_blueprint(epub_bp, url_prefix="/epub")
     app.register_blueprint(uploads_bp, url_prefix="/uploads")
     app.register_blueprint(crawler_bp)
     app.register_blueprint(odl_crawler_bp)
     app.register_blueprint(validate_bp)
     app.register_blueprint(analyze_bp)
+    app.register_blueprint(odl_analyze_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(manifest_bp, url_prefix="/manifest")
 
     return app

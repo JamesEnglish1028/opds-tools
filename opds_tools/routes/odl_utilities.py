@@ -5,8 +5,7 @@ import logging
 from urllib.parse import urlparse, parse_qs
 from opds_tools.util.parser import extract_publications_with_odl
 from opds_tools.util.validation import validate_opds_feed
-from opds_tools.models import db
-from opds_tools.models.odl_feed import ODLFeed
+from opds_tools.models import db, ODLFeed
 
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,6 @@ def odl_utilities():
     auth = (auth_info.get('username'), auth_info.get('password')) if auth_info else None
 
     if not auth or not auth[0]:
-        from opds_tools.models import ODLFeed
         feed_record = ODLFeed.query.filter_by(url=feed_url).first()
         if feed_record and feed_record.username:
             auth = (feed_record.username, feed_record.password)

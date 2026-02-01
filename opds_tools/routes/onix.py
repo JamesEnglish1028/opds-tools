@@ -7,7 +7,6 @@ import mimetypes
 import tempfile
 import base64
 from urllib.parse import quote
-from opds_tools.models.publication import Publication
 from datetime import datetime
 from io import BytesIO
 from werkzeug.utils import secure_filename
