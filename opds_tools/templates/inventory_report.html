@@ -23,7 +23,7 @@
         <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Feed Configuration</h5>
       </div>
       <div class="card-body">
-        <form method="post" action="{{ url_for('inventory.inventory_report_view') }}">
+        <form method="post" action="{{ url_for('inventory.inventory_report_view') }}" id="inventoryForm">
           <div class="mb-3">
             <label for="feed_url" class="form-label">OPDS Feed URL <span class="text-danger">*</span></label>
             <input 
