@@ -10,6 +10,10 @@ from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.chart import BarChart, PieChart, Reference
+
 from opds_tools.util.feed_analyzer import analyze_feed_url
 
 analyze_bp = Blueprint("analyze", __name__)
@@ -264,6 +268,255 @@ def analyze_feed_pdf():
         pdf,
         mimetype="application/pdf",
         headers={"Content-Disposition": "attachment;filename=opds_analysis_report.pdf"},
+    )
+
+
+@analyze_bp.route("/analyze-feed/excel", methods=["GET"])
+def analyze_feed_excel():
+    """
+    Generate an Excel report from the latest analysis results.
+    """
+    global _last_analysis
+
+    if not _last_analysis.get("results"):
+        flash("No analysis results available. Run an analysis first.", "warning")
+        return redirect(url_for("analyze.analyze_feed_view"))
+
+    results = _last_analysis["results"]
+    feed_url = _last_analysis.get("feed_url")
+    max_pages = _last_analysis.get("max_pages")
+
+    # Create workbook
+    wb = Workbook()
+    
+    # ===== SUMMARY SHEET =====
+    ws_summary = wb.active
+    ws_summary.title = "Summary"
+    
+    # Define styles
+    header_fill = PatternFill(start_color="0066CC", end_color="0066CC", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=12)
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    
+    info_fill = PatternFill(start_color="E8F4F8", end_color="E8F4F8", fill_type="solid")
+    info_font = Font(bold=True, size=11)
+    
+    accent_fill = PatternFill(start_color="FFF8DC", end_color="FFF8DC", fill_type="solid")
+    
+    cell_alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
+    
+    # Title
+    ws_summary['A1'] = "OPDS Feed Analysis Report"
+    ws_summary['A1'].font = Font(bold=True, size=14)
+    ws_summary.merge_cells('A1:B1')
+    
+    # Feed info
+    row = 3
+    ws_summary[f'A{row}'] = "Feed URL:"
+    ws_summary[f'B{row}'] = feed_url or 'N/A'
+    
+    row += 1
+    ws_summary[f'A{row}'] = "Max Pages:"
+    ws_summary[f'B{row}'] = max_pages or 'All'
+    
+    # Summary statistics
+    row += 2
+    ws_summary[f'A{row}'] = "Metric"
+    ws_summary[f'B{row}'] = "Value"
+    ws_summary[f'A{row}'].fill = header_fill
+    ws_summary[f'B{row}'].fill = header_fill
+    ws_summary[f'A{row}'].font = header_font
+    ws_summary[f'B{row}'].font = header_font
+    
+    summary = results.get("summary", {})
+    type_counts = summary.get("publication_type_counts", {})
+    type_percentages = summary.get("publication_type_percentages", {})
+    
+    metrics = [
+        ("Total Publications", summary.get("total_publications", 0)),
+        ("Pages Analyzed", summary.get("pages_analyzed", 0)),
+        ("Pages With Errors", summary.get("pages_with_errors", 0)),
+        ("Unique Formats", summary.get("unique_formats", 0)),
+        ("Unique Format Combinations", summary.get("unique_format_combinations", 0)),
+        ("Unique DRM Types", summary.get("unique_drm_types", 0)),
+        ("Bearer Token DRM Publications", summary.get("bearer_token_publications", 0)),
+        ("Audiobook Publications", summary.get("audiobook_publications", 0)),
+        ("Publications with Samples", summary.get("sample_publications", 0)),
+        ("", ""),  # Empty row
+        ("Publication Types:", ""),
+        ("  Book", f"{type_counts.get('Book', 0)} ({type_percentages.get('Book', 0)}%)"),
+        ("  Audiobook", f"{type_counts.get('Audiobook', 0)} ({type_percentages.get('Audiobook', 0)}%)"),
+        ("  Periodical", f"{type_counts.get('Periodical', 0)} ({type_percentages.get('Periodical', 0)}%)"),
+        ("  Other", f"{type_counts.get('Other', 0)} ({type_percentages.get('Other', 0)}%)"),
+    ]
+    
+    for metric_name, metric_value in metrics:
+        row += 1
+        ws_summary[f'A{row}'] = metric_name
+        ws_summary[f'B{row}'] = metric_value
+        if metric_name and not metric_name.startswith("  "):
+            ws_summary[f'A{row}'].fill = info_fill
+            ws_summary[f'B{row}'].fill = info_fill
+    
+    ws_summary.column_dimensions['A'].width = 35
+    ws_summary.column_dimensions['B'].width = 50
+    
+    # ===== FORMAT COMBINATIONS SHEET =====
+    ws_formats = wb.create_sheet("Format Combinations")
+    
+    headers = ["Format Combination", "Count", "% of Collection"]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_formats.cell(row=1, column=col_idx, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+    
+    for row_idx, item in enumerate(results.get("format_combo_stats", []), start=2):
+        ws_formats.cell(row=row_idx, column=1, value=item.get("combination", ""))
+        ws_formats.cell(row=row_idx, column=2, value=item.get("count", 0))
+        ws_formats.cell(row=row_idx, column=3, value=f"{item.get('percentage', 0)}%")
+        
+        # Highlight multi-format rows
+        if "+" in item.get("combination", ""):
+            for col in range(1, 4):
+                ws_formats.cell(row=row_idx, column=col).fill = accent_fill
+    
+    ws_formats.column_dimensions['A'].width = 40
+    ws_formats.column_dimensions['B'].width = 15
+    ws_formats.column_dimensions['C'].width = 20
+    
+    # ===== DRM DISTRIBUTION SHEET =====
+    ws_drm = wb.create_sheet("DRM Distribution")
+    
+    # DRM counts for all formats
+    headers = ["DRM Type", "Count", "% of Collection"]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_drm.cell(row=1, column=col_idx, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+    
+    drm_counts = results.get("drm_counts", {})
+    total_pubs = summary.get("total_publications", 0) or 1
+    row_idx = 2
+    
+    for drm, count in sorted(drm_counts.items(), key=lambda x: x[1], reverse=True):
+        if drm != "N/A":
+            ws_drm.cell(row=row_idx, column=1, value=drm)
+            ws_drm.cell(row=row_idx, column=2, value=count)
+            ws_drm.cell(row=row_idx, column=3, value=f"{(count / total_pubs * 100):.1f}%")
+            row_idx += 1
+    
+    # Add spacing and EPUB-specific DRM stats
+    row_idx += 2
+    ws_drm.cell(row=row_idx, column=1, value="DRM Distribution (EPUB Only)")
+    ws_drm.cell(row=row_idx, column=1).font = Font(bold=True, size=11)
+    ws_drm.merge_cells(f'A{row_idx}:D{row_idx}')
+    
+    row_idx += 1
+    headers_epub = ["DRM Type", "Count", "% of EPUBs", "% of Collection"]
+    for col_idx, header in enumerate(headers_epub, start=1):
+        cell = ws_drm.cell(row=row_idx, column=col_idx, value=header)
+        cell.fill = info_fill
+        cell.font = Font(bold=True, size=10)
+        cell.alignment = header_alignment
+    
+    epub_total = results.get("format_counts", {}).get("EPUB", 0) or 1
+    for drm, count in sorted(drm_counts.items(), key=lambda x: x[1], reverse=True):
+        if drm != "N/A":
+            row_idx += 1
+            pct_epub = (count / epub_total) * 100
+            pct_all = (count / total_pubs) * 100
+            ws_drm.cell(row=row_idx, column=1, value=drm)
+            ws_drm.cell(row=row_idx, column=2, value=count)
+            ws_drm.cell(row=row_idx, column=3, value=f"{pct_epub:.1f}%")
+            ws_drm.cell(row=row_idx, column=4, value=f"{pct_all:.1f}%")
+    
+    ws_drm.column_dimensions['A'].width = 25
+    ws_drm.column_dimensions['B'].width = 15
+    ws_drm.column_dimensions['C'].width = 18
+    ws_drm.column_dimensions['D'].width = 20
+    
+    # ===== FORMAT + DRM COMBINATIONS SHEET =====
+    ws_combined = wb.create_sheet("Format + DRM Details")
+    
+    headers = ["Format", "DRM", "Count", "% of Collection"]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_combined.cell(row=1, column=col_idx, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+    
+    for row_idx, item in enumerate(results.get("combined_stats", []), start=2):
+        ws_combined.cell(row=row_idx, column=1, value=item.get("format", ""))
+        ws_combined.cell(row=row_idx, column=2, value=item.get("drm", ""))
+        ws_combined.cell(row=row_idx, column=3, value=item.get("count", 0))
+        ws_combined.cell(row=row_idx, column=4, value=f"{item.get('percentage', 0)}%")
+    
+    ws_combined.column_dimensions['A'].width = 20
+    ws_combined.column_dimensions['B'].width = 25
+    ws_combined.column_dimensions['C'].width = 15
+    ws_combined.column_dimensions['D'].width = 20
+    
+    # ===== PUBLICATION TYPES SHEET =====
+    ws_types = wb.create_sheet("Publication Types")
+    
+    headers = ["Type", "Count", "Percentage"]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws_types.cell(row=1, column=col_idx, value=header)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+    
+    type_data = [
+        ("Book", type_counts.get('Book', 0), type_percentages.get('Book', 0)),
+        ("Audiobook", type_counts.get('Audiobook', 0), type_percentages.get('Audiobook', 0)),
+        ("Periodical", type_counts.get('Periodical', 0), type_percentages.get('Periodical', 0)),
+        ("Other", type_counts.get('Other', 0), type_percentages.get('Other', 0)),
+    ]
+    
+    for row_idx, (type_name, count, percentage) in enumerate(type_data, start=2):
+        ws_types.cell(row=row_idx, column=1, value=type_name)
+        ws_types.cell(row=row_idx, column=2, value=count)
+        ws_types.cell(row=row_idx, column=3, value=f"{percentage}%")
+    
+    ws_types.column_dimensions['A'].width = 20
+    ws_types.column_dimensions['B'].width = 15
+    ws_types.column_dimensions['C'].width = 15
+    
+    # ===== PAGE STATISTICS SHEET (if available) =====
+    if results.get("page_stats"):
+        ws_pages = wb.create_sheet("Page Statistics")
+        
+        headers = ["Page #", "URL", "Publications", "Errors"]
+        for col_idx, header in enumerate(headers, start=1):
+            cell = ws_pages.cell(row=1, column=col_idx, value=header)
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+        
+        for page_idx, page_stat in enumerate(results.get("page_stats", [])[:200], start=1):
+            row_idx = page_idx + 1  # +1 for header row
+            ws_pages.cell(row=row_idx, column=1, value=page_idx)
+            ws_pages.cell(row=row_idx, column=2, value=page_stat.get("url", ""))
+            ws_pages.cell(row=row_idx, column=3, value=page_stat.get("publication_count", 0))
+            error_msg = page_stat.get("error", "")
+            ws_pages.cell(row=row_idx, column=4, value=error_msg if error_msg else "")
+        
+        ws_pages.column_dimensions['A'].width = 10
+        ws_pages.column_dimensions['B'].width = 50
+        ws_pages.column_dimensions['C'].width = 15
+        ws_pages.column_dimensions['D'].width = 40
+    
+    # Save to BytesIO
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    return Response(
+        output.getvalue(),
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment;filename=opds_analysis_report.xlsx"},
     )
 
 

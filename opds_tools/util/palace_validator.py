@@ -280,6 +280,8 @@ def validate_feed_url(
     
     publication_errors = []
     feed_errors = []
+    publication_warnings = []
+    feed_warnings = []
     pub_count = 0
 
     page_num = 0
@@ -288,6 +290,7 @@ def validate_feed_url(
         
         if "error" in feed:
             feed_errors.append({
+                "page_number": page_num,
                 "url": page_url,
                 "error": feed["error"]
             })
@@ -309,17 +312,19 @@ def validate_feed_url(
         
         is_valid_schema, schema_errors = validate_opds_feed(feed)
         if not is_valid_schema:
-            feed_errors.append({
+            feed_warnings.append({
+                "page_number": page_num,
                 "url": page_url,
-                "error": "JSON Schema validation failed (continuing)",
+                "warning": "JSON Schema validation failed (continuing)",
+                "severity": "warning",
                 "details": schema_errors
             })
             if progress_callback:
-                progress_callback('validation_error', {
+                progress_callback('validation_warning', {
                     'page_number': page_num,
                     'stage': 'JSON Schema Validation',
                     'url': page_url,
-                    'error': f"Schema validation failed with {len(schema_errors) if isinstance(schema_errors, list) else 1} error(s)"
+                    'warning': f"Schema validation failed with {len(schema_errors) if isinstance(schema_errors, list) else 1} error(s)"
                 })
         else:
             if progress_callback:
@@ -347,6 +352,7 @@ def validate_feed_url(
                 })
         except ValidationError as e:
             feed_errors.append({
+                "page_number": page_num,
                 "url": page_url,
                 "error": str(e)
             })
@@ -382,6 +388,7 @@ def validate_feed_url(
                 links = pub.get("links", [])
 
                 publication_errors.append({
+                    "page_number": page_num,
                     "feed_url": page_url,
                     "identifier": pub_metadata.get("identifier"),
                     "title": pub_metadata.get("title"),
@@ -404,9 +411,28 @@ def validate_feed_url(
 
             # ✅ Check identifier URI validity
             identifier = pub_metadata.get("identifier")
-            if not is_valid_uri(identifier):
+            if not identifier:
+                # Missing identifier is a warning
+                publication_warnings.append({
+                    "page_number": page_num,
+                    "feed_url": page_url,
+                    "identifier": identifier,
+                    "title": pub_metadata.get("title"),
+                    "author": pub_metadata.get("author"),
+                    "warning": "Missing metadata.identifier",
+                    "severity": "warning"
+                })
+                if progress_callback:
+                    progress_callback('validation_warning', {
+                        'page_number': page_num,
+                        'stage': 'URI Validation',
+                        'publication': pub_title,
+                        'warning': 'Missing metadata.identifier'
+                    })
+            elif not is_valid_uri(identifier):
                 pub_validation_errors += 1
                 publication_errors.append({
+                    "page_number": page_num,
                     "feed_url": page_url,
                     "identifier": identifier,
                     "title": pub_metadata.get("title"),
@@ -426,6 +452,27 @@ def validate_feed_url(
                         'identifier': identifier,
                         'error': 'Invalid metadata.identifier — not a valid URI'
                     })
+            
+            # Check for missing optional but recommended fields
+            if not pub_metadata.get("author"):
+                publication_warnings.append({
+                    "page_number": page_num,
+                    "feed_url": page_url,
+                    "identifier": identifier,
+                    "title": pub_metadata.get("title"),
+                    "warning": "Missing recommended field: metadata.author",
+                    "severity": "info"
+                })
+            
+            if not pub.get("images") and not pub_metadata.get("coverImage"):
+                publication_warnings.append({
+                    "page_number": page_num,
+                    "feed_url": page_url,
+                    "identifier": identifier,
+                    "title": pub_metadata.get("title"),
+                    "warning": "Missing cover image (images[] or metadata.coverImage)",
+                    "severity": "info"
+                })
         
         # Summary for this page
         if progress_callback:
@@ -448,17 +495,21 @@ def validate_feed_url(
     result = {
         "feed_errors": feed_errors,
         "publication_errors": publication_errors,
+        "feed_warnings": feed_warnings,
+        "publication_warnings": publication_warnings,
         "summary": {
             "pages_validated": len(feeds),
             "publication_count": pub_count,
-            "error_count": len(publication_errors) + len(feed_errors)
+            "error_count": len(publication_errors) + len(feed_errors),
+            "warning_count": len(publication_warnings) + len(feed_warnings)
         }
     }
     
     if progress_callback:
         progress_callback('complete', {
             'summary': result['summary'],
-            'total_errors': result['summary']['error_count']
+            'total_errors': result['summary']['error_count'],
+            'total_warnings': result['summary']['warning_count']
         })
     
     return result

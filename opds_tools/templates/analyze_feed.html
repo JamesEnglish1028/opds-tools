@@ -95,7 +95,7 @@
   {% endif %}
 
   {% if results and results.get('summary') %}
-    <div class="d-flex gap-2 mb-3">
+    <div class="d-flex gap-2 mb-3 flex-wrap">
       <form method="POST" action="{{ url_for('analyze.analyze_feed_view') }}">
         <input type="hidden" name="feed_url" value="{{ feed_url }}">
         <input type="hidden" name="max_pages" value="{{ max_pages or '' }}">
@@ -104,6 +104,9 @@
       </form>
       <a class="btn btn-outline-primary btn-sm" href="{{ url_for('analyze.analyze_feed_pdf') }}">
         📄 Download PDF Report
+      </a>
+      <a class="btn btn-outline-success btn-sm" href="{{ url_for('analyze.analyze_feed_excel') }}">
+        📊 Download Excel Report
       </a>
     </div>
 

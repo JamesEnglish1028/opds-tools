@@ -79,7 +79,7 @@
   </div>
 
   {% if results %}
-    <div class="d-flex gap-2 mb-3">
+    <div class="d-flex gap-2 mb-3 flex-wrap">
       <form method="POST" action="{{ url_for('validate.validate_feed_view') }}">
         <input type="hidden" name="feed_url" value="{{ feed_url }}">
         <input type="hidden" name="download_json" value="1">
@@ -87,6 +87,9 @@
       </form>
       <a class="btn btn-outline-primary btn-sm" href="{{ url_for('validate.validate_feed_pdf') }}">
         📄 Download PDF Report
+      </a>
+      <a class="btn btn-outline-success btn-sm" href="{{ url_for('validate.validate_feed_excel') }}">
+        📊 Download Excel Report
       </a>
     </div>
 
@@ -96,8 +99,125 @@
         <p>✅ Pages validated: <strong>{{ results.summary.pages_validated }}</strong></p>
         <p>📚 Publications checked: <strong>{{ results.summary.publication_count }}</strong></p>
         <p class="text-danger">❌ Total errors: <strong>{{ results.summary.error_count }}</strong></p>
+        <p class="text-warning">⚠️ Total warnings: <strong>{{ results.summary.get('warning_count', 0) }}</strong></p>
       </div>
     </div>
+
+    {% if results.feed_errors or results.publication_errors or results.get('feed_warnings') or results.get('publication_warnings') %}
+      {# Build summary of errors and warnings by page #}
+      {% set error_summary = {} %}
+      {% for err in results.feed_errors %}
+        {% set page = err.get('page_number', 'Unknown') %}
+        {% if page not in error_summary %}
+          {% set _ = error_summary.update({page: {'schema_errors': 0, 'structure_errors': 0, 'publication_errors': 0, 'warnings': 0, 'publications': []}}) %}
+        {% endif %}
+        {% if 'Schema validation' in err.get('error', '') %}
+          {% set _ = error_summary[page].update({'schema_errors': error_summary[page].schema_errors + 1}) %}
+        {% else %}
+          {% set _ = error_summary[page].update({'structure_errors': error_summary[page].structure_errors + 1}) %}
+        {% endif %}
+      {% endfor %}
+      {% for warn in results.get('feed_warnings', []) %}
+        {% set page = warn.get('page_number', 'Unknown') %}
+        {% if page not in error_summary %}
+          {% set _ = error_summary.update({page: {'schema_errors': 0, 'structure_errors': 0, 'publication_errors': 0, 'warnings': 0, 'publications': []}}) %}
+        {% endif %}
+        {% set _ = error_summary[page].update({'warnings': error_summary[page].warnings + 1}) %}
+      {% endfor %}
+      {% for err in results.publication_errors %}
+        {% set page = err.get('page_number', 'Unknown') %}
+        {% if page not in error_summary %}
+          {% set _ = error_summary.update({page: {'schema_errors': 0, 'structure_errors': 0, 'publication_errors': 0, 'warnings': 0, 'publications': []}}) %}
+        {% endif %}
+        {% set _ = error_summary[page].update({'publication_errors': error_summary[page].publication_errors + 1}) %}
+        {% set _ = error_summary[page].publications.append({'title': err.get('title', 'Untitled'), 'error': err.get('error', '')}) %}
+      {% endfor %}
+      {% for warn in results.get('publication_warnings', []) %}
+        {% set page = warn.get('page_number', 'Unknown') %}
+        {% if page not in error_summary %}
+          {% set _ = error_summary.update({page: {'schema_errors': 0, 'structure_errors': 0, 'publication_errors': 0, 'warnings': 0, 'publications': []}}) %}
+        {% endif %}
+        {% set _ = error_summary[page].update({'warnings': error_summary[page].warnings + 1}) %}
+      {% endfor %}
+
+      <div class="card mb-3 border-info">
+        <div class="card-header bg-info text-white">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>Validation Issues Summary by Page
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-sm">
+              <thead>
+                <tr>
+                  <th>Page</th>
+                  <th>Schema Errors</th>
+                  <th>Feed Structure Errors</th>
+                  <th>Publication Errors</th>
+                  <th>Warnings</th>
+                  <th>Total</th>
+                  <th>Failed Publications</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for page_num in error_summary.keys()|sort %}
+                  {% set page_data = error_summary[page_num] %}
+                  {% set total = page_data.schema_errors + page_data.structure_errors + page_data.publication_errors + page_data.warnings %}
+                  <tr>
+                    <td><strong>Page {{ page_num }}</strong></td>
+                    <td>
+                      {% if page_data.schema_errors > 0 %}
+                        <span class="badge bg-danger">{{ page_data.schema_errors }}</span>
+                      {% else %}
+                        <span class="text-muted">0</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if page_data.structure_errors > 0 %}
+                        <span class="badge bg-danger">{{ page_data.structure_errors }}</span>
+                      {% else %}
+                        <span class="text-muted">0</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if page_data.publication_errors > 0 %}
+                        <span class="badge bg-warning text-dark">{{ page_data.publication_errors }}</span>
+                      {% else %}
+                        <span class="text-muted">0</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if page_data.warnings > 0 %}
+                        <span class="badge bg-warning">{{ page_data.warnings }}</span>
+                      {% else %}
+                        <span class="text-muted">0</span>
+                      {% endif %}
+                    </td>
+                    <td><strong>{{ total }}</strong></td>
+                    <td>
+                      {% if page_data.publications %}
+                        <details>
+                          <summary>{{ page_data.publications|length }} publication(s)</summary>
+                          <ul class="small mt-1 mb-0">
+                            {% for pub in page_data.publications[:10] %}
+                              <li>{{ pub.title }}: <code class="small">{{ pub.error[:80] }}...</code></li>
+                            {% endfor %}
+                            {% if page_data.publications|length > 10 %}
+                              <li class="text-muted">... and {{ page_data.publications|length - 10 }} more</li>
+                            {% endif %}
+                          </ul>
+                        </details>
+                      {% else %}
+                        -
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
 
     {% if results.feed_errors %}
       <div class="card border-danger mb-3">
@@ -106,8 +226,9 @@
           <div class="mb-0">
             {% for err in results.feed_errors %}
               <div class="mb-2">
-                <strong>{{ err.url }}</strong>: {{ err.error }}
-                {% if err.details %}
+                <span class="badge bg-secondary">Page {{ err.get('page_number', '?') }}</span>
+                <strong>{{ err.get('url', '') }}</strong>: {{ err.get('error', '') }}
+                {% if err.get('details') %}
                   <details class="mt-1">
                     <summary>View Details</summary>
                     <pre class="small">{{ err.details | tojson(indent=2) }}</pre>
@@ -122,20 +243,69 @@
 
 
     {% if results.publication_errors %}
-      <div class="card border-warning">
+      <div class="card border-warning mb-3">
         <div class="card-header bg-warning text-dark">Publication Errors</div>
         <div class="card-body">
           {% for pub in results.publication_errors %}
             <div class="mb-3 border-bottom pb-2">
-              <strong>{{ pub.title or "Untitled" }}</strong>
-              {% if pub.identifier %} <small class="text-muted">({{ pub.identifier }})</small>{% endif %}
+              <span class="badge bg-secondary">Page {{ pub.get('page_number', '?') }}</span>
+              <strong>{{ pub.get('title', 'Untitled') }}</strong>
+              {% if pub.get('identifier') %} <small class="text-muted">({{ pub.identifier }})</small>{% endif %}
               <br>
-              <em>From: {{ pub.feed_url }}</em><br>
-              <code class="text-danger">{{ pub.error }}</code>
+              <em>From: {{ pub.get('feed_url', '') }}</em><br>
+              <code class="text-danger">{{ pub.get('error', '') }}</code>
+              {% if pub.get('json') %}
               <details class="mt-2">
                 <summary>View Raw Publication JSON</summary>
                 <pre class="pre-wrap">{{ pub.json | tojson(indent=2) }}</pre>
               </details>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if results.get('feed_warnings') %}
+      <div class="card border-warning mb-3">
+        <div class="card-header bg-warning text-dark">
+          <i class="bi bi-exclamation-triangle me-2"></i>Feed Page Warnings
+        </div>
+        <div class="card-body">
+          <div class="mb-0">
+            {% for warn in results.feed_warnings %}
+              <div class="mb-2">
+                <span class="badge bg-secondary">Page {{ warn.get('page_number', '?') }}</span>
+                <span class="badge bg-{{ 'info' if warn.get('severity') == 'info' else 'warning' }}">{{ warn.get('severity', 'warning').upper() }}</span>
+                <strong>{{ warn.get('url', '') }}</strong>: {{ warn.get('warning', '') }}
+                {% if warn.get('details') %}
+                  <details class="mt-1">
+                    <summary>View Details</summary>
+                    <pre class="small">{{ warn.details | tojson(indent=2) }}</pre>
+                  </details>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if results.get('publication_warnings') %}
+      <div class="card border-info">
+        <div class="card-header bg-info text-white">
+          <i class="bi bi-info-circle me-2"></i>Publication Warnings
+        </div>
+        <div class="card-body">
+          {% for warn in results.publication_warnings %}
+            <div class="mb-2 border-bottom pb-2">
+              <span class="badge bg-secondary">Page {{ warn.get('page_number', '?') }}</span>
+              <span class="badge bg-{{ 'info' if warn.get('severity') == 'info' else 'warning' }}">{{ warn.get('severity', 'warning').upper() }}</span>
+              <strong>{{ warn.get('title', 'Untitled') }}</strong>
+              {% if warn.get('identifier') %} <small class="text-muted">({{ warn.identifier }})</small>{% endif %}
+              <br>
+              <em>From: {{ warn.get('feed_url', '') }}</em><br>
+              <code class="text-warning">{{ warn.get('warning', '') }}</code>
             </div>
           {% endfor %}
         </div>
@@ -181,7 +351,7 @@ document.getElementById('validateBtn').addEventListener('click', function() {
   function addLogMessage(message, type = 'info') {
     const log = document.getElementById('progressLog');
     const timestamp = new Date().toLocaleTimeString();
-    const badge = type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info';
+    const badge = type === 'error' ? 'danger' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
     log.innerHTML += `<div class="mb-1"><span class="badge bg-${badge}">${timestamp}</span> ${message}</div>`;
     log.scrollTop = log.scrollHeight;
   }
@@ -271,6 +441,15 @@ document.getElementById('validateBtn').addEventListener('click', function() {
           addLogMessage(`❌ ${data.stage} - "${data.publication}": ${data.error}`, 'error');
         } else {
           addLogMessage(`❌ ${data.stage}: ${data.error}`, 'error');
+        }
+        break;
+        
+      case 'validation_warning':
+        // Don't increment error count for warnings
+        if (data.publication) {
+          addLogMessage(`⚠️ WARNING - "${data.publication}": ${data.warning || data.error}`, 'warning');
+        } else {
+          addLogMessage(`⚠️ WARNING - ${data.stage}: ${data.warning || data.error}`, 'warning');
         }
         break;
         
