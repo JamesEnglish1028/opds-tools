@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}OPDS Inventory Report Generator{% endblock %}
+{% block title %}ODL Inventory Report Generator{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4 px-3">
   <div class="container my-4">
     <h3 class="text-primary text-uppercase mt-4 mb-4">
-      <i class="bi bi-file-earmark-spreadsheet me-2"></i>OPDS Inventory Report Generator
+      <i class="bi bi-file-earmark-spreadsheet me-2"></i>ODL Inventory Report Generator
     </h3>
     <hr class="mt-0 mb-4">
 
     <!-- Description -->
     <div class="alert alert-info mb-4">
       <i class="bi bi-info-circle me-2"></i>
-      <strong>Generate Inventory Reports:</strong> Provide an OPDS feed URL to crawl and generate a downloadable inventory report in CSV or XML format. 
-      The report includes publication identifiers, titles, authors, publishers, formats (EPUB, PDF, WebPub), and DRM types.
+      <strong>Generate ODL Inventory Reports:</strong> Provide an ODL feed URL to crawl and generate a downloadable inventory report in CSV or Excel format.
+      The report includes publication identifiers, titles, authors, publishers, media types, DRM, order details, pricing, and access terms (concurrency, copy, print).
+      <br><small class="mt-2 d-block"><strong>Authentication:</strong> Username/password are sent as HTTP Basic Auth headers. Some APIs may require API keys as query parameters instead (add them to the URL).</small>
     </div>
 
     <!-- Input Form -->
@@ -23,27 +24,27 @@
         <h5 class="mb-0"><i class="bi bi-link-45deg me-2"></i>Feed Configuration</h5>
       </div>
       <div class="card-body">
-        <form method="post" action="{{ url_for('inventory.inventory_report_view') }}" id="inventoryForm">
+        <form method="post" action="{{ url_for('odl_inventory.odl_inventory_report_view') }}">
           <div class="mb-3">
-            <label for="feed_url" class="form-label">OPDS Feed URL <span class="text-danger">*</span></label>
-            <input 
-              type="url" 
-              class="form-control" 
-              id="feed_url" 
+            <label for="feed_url" class="form-label">ODL Feed URL <span class="text-danger">*</span></label>
+            <input
+              type="url"
+              class="form-control"
+              id="feed_url"
               name="feed_url"
               value="{{ feed_url }}"
-              placeholder="https://example.com/opds/catalog.json" 
+              placeholder="https://example.com/odl/catalog.json"
               required>
-            <small class="form-text text-muted">Enter the URL of the OPDS 2.0 feed to analyze</small>
+            <small class="form-text text-muted">Enter the URL of the ODL feed to analyze</small>
           </div>
 
           <div class="row">
             <div class="col-md-4">
               <label for="max_pages" class="form-label">Max Pages (Optional)</label>
-              <input 
-                type="number" 
-                class="form-control" 
-                id="max_pages" 
+              <input
+                type="number"
+                class="form-control"
+                id="max_pages"
                 name="max_pages"
                 value="{{ max_pages or '' }}"
                 min="1"
@@ -52,20 +53,22 @@
             </div>
             <div class="col-md-4">
               <label for="username" class="form-label">Username (Optional)</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="username" 
+              <input
+                type="text"
+                class="form-control"
+                id="username"
                 name="username"
+                value="{{ username or '' }}"
                 placeholder="Basic Auth Username">
             </div>
             <div class="col-md-4">
               <label for="password" class="form-label">Password (Optional)</label>
-              <input 
-                type="password" 
-                class="form-control" 
-                id="password" 
+              <input
+                type="password"
+                class="form-control"
+                id="password"
                 name="password"
+                value="{{ password or '' }}"
                 placeholder="Basic Auth Password">
             </div>
           </div>
@@ -87,14 +90,14 @@
     <!-- Progress Section (shown during generation) -->
     <div class="card shadow-sm mb-4 d-none" id="progressCard">
       <div class="card-header bg-info text-white">
-        <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Processing Feed...</h5>
+        <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Processing ODL Feed...</h5>
       </div>
       <div class="card-body">
         <div class="mb-3">
           <h6 id="currentPage">Initializing...</h6>
           <div class="progress progress-tall">
-            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated progress-bar-initial" 
-                 role="progressbar" aria-label="Inventory generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</div>
+            <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated progress-bar-initial"
+                 role="progressbar" aria-label="ODL inventory generation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">0%</div>
           </div>
         </div>
         <div id="progressDetails" class="small text-muted">
@@ -112,7 +115,7 @@
     {% if inventory_data or stats %}
     <div class="card shadow-sm mb-4 summary-card">
       <div class="card-header">
-        <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>Inventory Summary</h5>
+        <h5 class="mb-0"><i class="bi bi-check-circle me-2"></i>ODL Inventory Summary</h5>
       </div>
       <div class="card-body">
         <div class="row">
@@ -131,7 +134,7 @@
           <div class="col-md-3">
             <div class="text-center p-3 border rounded">
               <h2 class="text-success mb-0">{{ stats.unique_formats or 0 }}</h2>
-              <small class="text-muted">Unique Formats</small>
+              <small class="text-muted">Unique Media Types</small>
             </div>
           </div>
           <div class="col-md-3">
@@ -144,28 +147,28 @@
 
         <!-- Download Buttons -->
         <div class="mt-4 text-center">
-          <a href="{{ url_for('inventory.download_csv') }}" class="btn btn-success btn-lg me-2">
+          <a href="{{ url_for('odl_inventory.download_csv') }}" class="btn btn-success btn-lg me-2">
             <i class="bi bi-file-earmark-spreadsheet me-2"></i>Download CSV
           </a>
-          <a href="{{ url_for('inventory.download_xml') }}" class="btn btn-primary btn-lg">
+          <a href="{{ url_for('odl_inventory.download_xml') }}" class="btn btn-primary btn-lg">
             <i class="bi bi-file-earmark-excel me-2"></i>Download Excel
           </a>
         </div>
       </div>
     </div>
 
-    <!-- Format Breakdown -->
+    <!-- Media Type Breakdown -->
     {% if stats.format_counts %}
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>Format Distribution</h5>
+        <h5 class="mb-0"><i class="bi bi-file-earmark me-2"></i>Media Type Distribution</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive">
           <table class="table table-striped table-hover">
             <thead>
               <tr>
-                <th>Format</th>
+                <th>Media Type</th>
                 <th>Count</th>
                 <th>Percentage</th>
               </tr>
@@ -178,12 +181,12 @@
                 <td>{{ item.count }}</td>
                 <td>
                   <div class="progress progress-short">
-                    <div class="progress-bar" role="progressbar" 
+                    <div class="progress-bar" role="progressbar"
                          data-progress="{{ percent }}"
                          data-valuenow="{{ item.count }}"
                          data-valuemax="{{ stats.total_publications }}"
-                         aria-label="Format distribution: {{ item.type }}"
-                         aria-valuemin="0" 
+                         aria-label="Media type distribution: {{ item.type }}"
+                         aria-valuemin="0"
                          aria-valuemax="100"
                          aria-valuenow="0">
                       {{ percent }}%
@@ -223,13 +226,13 @@
                 <td>{{ item.count }}</td>
                 <td>
                   <div class="progress progress-short">
-                    <div class="progress-bar bg-{{ 'success' if item.type == 'None' else 'warning' }}" 
-                         role="progressbar" 
+                    <div class="progress-bar bg-{{ 'success' if item.type == 'No DRM' else 'warning' }}"
+                         role="progressbar"
                          data-progress="{{ percent }}"
                          data-valuenow="{{ item.count }}"
                          data-valuemax="{{ stats.total_publications }}"
                          aria-label="DRM distribution: {{ item.type }}"
-                         aria-valuemin="0" 
+                         aria-valuemin="0"
                          aria-valuemax="100"
                          aria-valuenow="0">
                       {{ percent }}%
@@ -245,156 +248,67 @@
     </div>
     {% endif %}
 
-    <!-- Language Distribution -->
-    {% if stats.get('language_counts') %}
+    <!-- Data Preview -->
+    {% if inventory_data %}
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="bi bi-globe me-2"></i>Language Distribution</h5>
+        <h5 class="mb-0"><i class="bi bi-table me-2"></i>Data Preview (First 20 Records)</h5>
       </div>
       <div class="card-body">
         <div class="table-responsive">
-          <table class="table table-striped table-hover">
+          <table class="table table-striped table-hover table-sm">
             <thead>
               <tr>
-                <th>Language</th>
-                <th>Count</th>
-                <th>Percentage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in stats.get('language_counts', [])[:25] %}
-              {% set percent = (item.count / stats.total_publications * 100) | round(1) %}
-              <tr>
-                <td><strong>{{ item.type }}</strong></td>
-                <td>{{ item.count }}</td>
-                <td>
-                  <div class="progress progress-short">
-                    <div class="progress-bar bg-info" role="progressbar" 
-                         data-progress="{{ percent }}"
-                         data-valuenow="{{ item.count }}"
-                         data-valuemax="{{ stats.total_publications }}"
-                         aria-label="Language distribution: {{ item.type }}"
-                         aria-valuemin="0" 
-                         aria-valuemax="100"
-                         aria-valuenow="0">
-                      {{ percent }}%
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% if stats.get('language_counts', [])|length > 25 %}
-        <p class="text-muted text-center mt-2">
-          <small>Showing 25 of {{ stats.get('language_counts', [])|length }} languages.</small>
-        </p>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Subject Distribution -->
-    {% if stats.get('subject_counts') %}
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="bi bi-tags me-2"></i>Subject Distribution</h5>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover">
-            <thead>
-              <tr>
-                <th>Subject</th>
-                <th>Count</th>
-                <th>Percentage</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in stats.get('subject_counts', [])[:30] %}
-              {% set percent = (item.count / stats.total_publications * 100) | round(1) %}
-              <tr>
-                <td><strong>{{ item.type }}</strong></td>
-                <td>{{ item.count }}</td>
-                <td>
-                  <div class="progress progress-short">
-                    <div class="progress-bar bg-secondary" role="progressbar" 
-                         data-progress="{{ percent }}"
-                         data-valuenow="{{ item.count }}"
-                         data-valuemax="{{ stats.total_publications }}"
-                         aria-label="Subject distribution: {{ item.type }}"
-                         aria-valuemin="0" 
-                         aria-valuemax="100"
-                         aria-valuenow="0">
-                      {{ percent }}%
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% if stats.get('subject_counts', [])|length > 30 %}
-        <p class="text-muted text-center mt-2">
-          <small>Showing 30 of {{ stats.get('subject_counts', [])|length }} subjects.</small>
-        </p>
-        {% endif %}
-      </div>
-    </div>
-    {% endif %}
-
-    <!-- Publisher Distribution -->
-    {% if stats.get('publisher_counts') %}
-    <div class="card shadow-sm mb-4">
-      <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="bi bi-building me-2"></i>Publisher Distribution</h5>
-      </div>
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-striped table-hover">
-            <thead>
-              <tr>
+                <th>Identifier</th>
+                <th>Title</th>
+                <th>Author</th>
                 <th>Publisher</th>
-                <th>Count</th>
-                <th>Percentage</th>
+                <th>Media Type</th>
+                <th>DRM</th>
+                <th>Order Name</th>
+                <th>Order ID</th>
+                <th>Price</th>
+                <th>Concurrency</th>
+                <th>Copy</th>
+                <th>Print</th>
               </tr>
             </thead>
             <tbody>
-              {% for item in stats.get('publisher_counts', [])[:25] %}
-              {% set percent = (item.count / stats.total_publications * 100) | round(1) %}
+              {% for record in inventory_data[:20] %}
               <tr>
-                <td><strong>{{ item.type }}</strong></td>
-                <td>{{ item.count }}</td>
+                <td><code class="small">{{ record.identifier }}</code></td>
+                <td>{{ record.title }}</td>
+                <td>{{ record.author }}</td>
+                <td>{{ record.publisher }}</td>
+                <td><span class="badge bg-info">{{ record.format }}</span></td>
                 <td>
-                  <div class="progress progress-short">
-                    <div class="progress-bar bg-warning" role="progressbar" 
-                         data-progress="{{ percent }}"
-                         data-valuenow="{{ item.count }}"
-                         data-valuemax="{{ stats.total_publications }}"
-                         aria-label="Publisher distribution: {{ item.type }}"
-                         aria-valuemin="0" 
-                         aria-valuemax="100"
-                         aria-valuenow="0">
-                      {{ percent }}%
-                    </div>
-                  </div>
+                  {% if record.drm == 'No DRM' %}
+                    <span class="badge bg-success">{{ record.drm }}</span>
+                  {% elif record.drm == 'Unknown' %}
+                    <span class="badge bg-secondary">{{ record.drm }}</span>
+                  {% else %}
+                    <span class="badge bg-warning">{{ record.drm }}</span>
+                  {% endif %}
                 </td>
+                <td>{{ record.order_name }}</td>
+                <td>{{ record.order_id }}</td>
+                <td>{{ record.price }}</td>
+                <td>{{ record.concurrency }}</td>
+                <td>{{ record.copy_allowed }}</td>
+                <td>{{ record.print_allowed }}</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-        {% if stats.get('publisher_counts', [])|length > 25 %}
+        {% if inventory_data|length > 20 %}
         <p class="text-muted text-center mt-2">
-          <small>Showing 25 of {{ stats.get('publisher_counts', [])|length }} publishers.</small>
+          <small>Showing 20 of {{ inventory_data|length }} total records. Download the full report to see all data.</small>
         </p>
         {% endif %}
       </div>
     </div>
     {% endif %}
-
 
     <!-- Errors Section -->
     {% if errors %}
@@ -426,26 +340,23 @@
 document.getElementById('generateBtn').addEventListener('click', function() {
   const form = document.querySelector('form');
   const formData = new FormData(form);
-  
+
   const feedUrl = formData.get('feed_url');
   if (!feedUrl) {
     alert('Please provide a feed URL');
     return;
   }
-  
-  // Hide any existing results
+
   const existingResults = document.querySelectorAll('.card.shadow-sm.mb-4:not(#progressCard)');
   existingResults.forEach(card => {
     if (!card.querySelector('form')) {
       card.style.display = 'none';
     }
   });
-  
-  // Show progress card
+
   const progressCard = document.getElementById('progressCard');
   progressCard.classList.remove('d-none');
-  
-  // Reset progress
+
   document.getElementById('currentPage').textContent = 'Connecting to server...';
   document.getElementById('progressBar').style.width = '0%';
   document.getElementById('progressBar').textContent = '0%';
@@ -453,8 +364,7 @@ document.getElementById('generateBtn').addEventListener('click', function() {
   document.getElementById('pubsCount').textContent = '0';
   document.getElementById('errorsCount').textContent = '0';
   document.getElementById('progressLog').innerHTML = '';
-  
-  // Add initial log message
+
   function addLogMessage(message, type = 'info') {
     const log = document.getElementById('progressLog');
     const timestamp = new Date().toLocaleTimeString();
@@ -462,68 +372,69 @@ document.getElementById('generateBtn').addEventListener('click', function() {
     log.innerHTML += `<div class="mb-1"><span class="badge bg-${badge}">${timestamp}</span> ${message}</div>`;
     log.scrollTop = log.scrollHeight;
   }
-  
+
   addLogMessage('Establishing connection to server...');
-  
-  // Disable generate button
+
   const generateBtn = document.getElementById('generateBtn');
   generateBtn.disabled = true;
   generateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-  
-  // Build URL with query parameters (EventSource only supports GET)
+
   const params = new URLSearchParams();
   params.append('feed_url', formData.get('feed_url') || '');
   params.append('max_pages', formData.get('max_pages') || '');
   params.append('username', formData.get('username') || '');
   params.append('password', formData.get('password') || '');
-  
-  const streamUrl = '{{ url_for("inventory.inventory_report_stream") }}?' + params.toString();
-  
-  // Create EventSource for Server-Sent Events
+
+  const streamUrl = '{{ url_for("odl_inventory.odl_inventory_report_stream") }}?' + params.toString();
+
   const eventSource = new EventSource(streamUrl);
-  
+
   let totalPages = 0;
   let totalPubs = 0;
   let totalErrors = 0;
   const maxPages = formData.get('max_pages') ? parseInt(formData.get('max_pages')) : null;
-  
+
   eventSource.addEventListener('message', function(e) {
     const data = JSON.parse(e.data);
-    
-    console.log('Received event:', data.type, data); // Debug logging
-    
+
     switch(data.type) {
       case 'started':
-        document.getElementById('currentPage').textContent = 'Starting feed crawl...';
+        document.getElementById('currentPage').textContent = 'Starting ODL feed crawl...';
         addLogMessage(`Started crawling: ${data.feed_url}`);
         break;
-        
+
       case 'page_started':
         totalPages = data.page_number;
         document.getElementById('currentPage').textContent = `Processing Page ${data.page_number}...`;
         document.getElementById('pagesCount').textContent = totalPages;
         addLogMessage(`Fetching page ${data.page_number}...`);
-        
-        // Update progress bar if max_pages is set
+
         if (maxPages) {
           const progress = Math.min(100, (data.page_number / maxPages) * 100);
           document.getElementById('progressBar').style.width = progress + '%';
           document.getElementById('progressBar').textContent = Math.round(progress) + '%';
         }
         break;
-        
+
       case 'publications_found':
         totalPubs = data.total_publications + data.count;
         document.getElementById('pubsCount').textContent = totalPubs;
         addLogMessage(`Found ${data.count} publications on page ${data.page_number} (Total: ${totalPubs})`);
         break;
-        
+
+      case 'pagination_found':
+        addLogMessage(`Pagination link found, moving to next page...`);
+        break;
+
+      case 'pagination_complete':
+        addLogMessage(`Pagination complete: ${data.message}`, 'info');
+        break;
+
       case 'error':
         totalErrors++;
         document.getElementById('errorsCount').textContent = totalErrors;
         addLogMessage(`Error: ${data.message}`, 'error');
-        
-        // Check if this is a fatal error (has no page_number)
+
         if (!data.page_number) {
           eventSource.close();
           document.getElementById('currentPage').textContent = 'Error occurred';
@@ -533,46 +444,39 @@ document.getElementById('generateBtn').addEventListener('click', function() {
           generateBtn.innerHTML = '<i class="bi bi-gear me-2"></i>Generate Inventory';
         }
         break;
-        
+
       case 'complete':
-        console.log('Completion event received, stats:', data.stats);
         eventSource.close();
         document.getElementById('currentPage').textContent = 'Complete!';
         document.getElementById('progressBar').classList.remove('progress-bar-animated', 'progress-bar-striped');
         document.getElementById('progressBar').classList.add('bg-success');
         document.getElementById('progressBar').style.width = '100%';
         document.getElementById('progressBar').textContent = '100%';
-        
+
         addLogMessage(`Completed! ${data.stats.total_publications} publications from ${data.stats.pages_crawled} pages`, 'success');
-        
-        // Re-enable button
+
         generateBtn.disabled = false;
         generateBtn.innerHTML = '<i class="bi bi-gear me-2"></i>Generate Inventory';
-        
-        // Reload page to show results after a short delay
-        // Use history API to clear the POST and do a fresh GET load
+
         addLogMessage('Redirecting to display results...', 'info');
         setTimeout(() => {
-          console.log('Reloading page now...');
           window.history.replaceState({}, document.title, window.location.pathname);
           location.reload();
-        }, 2000);
+        }, 3000);
         break;
     }
   });
-  
+
   eventSource.onerror = function(err) {
-    console.error('EventSource error:', err);
     eventSource.close();
-    
-    // Only show error if we haven't received a completion event
+
     if (document.getElementById('currentPage').textContent !== 'Complete!') {
       addLogMessage('Connection error or stream ended unexpectedly', 'error');
       document.getElementById('currentPage').textContent = 'Connection error';
       document.getElementById('progressBar').classList.remove('progress-bar-animated', 'progress-bar-striped');
       document.getElementById('progressBar').classList.add('bg-danger');
     }
-    
+
     generateBtn.disabled = false;
     generateBtn.innerHTML = '<i class="bi bi-gear me-2"></i>Generate Inventory';
   };

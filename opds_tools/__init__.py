@@ -23,6 +23,7 @@ from .routes.validate import validate_bp
 from .routes.analyze import analyze_bp
 from .routes.analyze_odl import odl_analyze_bp
 from .routes.inventory import inventory_bp
+from .routes.odl_inventory import odl_inventory_bp
 from .routes.manifest import manifest_bp
 
 
@@ -76,6 +77,7 @@ def create_app():
     app.register_blueprint(analyze_bp)
     app.register_blueprint(odl_analyze_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(odl_inventory_bp)
     app.register_blueprint(manifest_bp, url_prefix="/manifest")
 
     return app

@@ -255,6 +255,7 @@ def analyze_odl_feed(
     all_feeds = {}
     current_url = feed_url
     page_count = 0
+    current_auth = auth
     
     try:
         while current_url and (max_pages is None or page_count < max_pages):
@@ -262,7 +263,7 @@ def analyze_odl_feed(
             print(f"   📖 Fetching page {page_count}: {current_url}")
             
             try:
-                response = requests.get(current_url, auth=auth, timeout=10)
+                response = requests.get(current_url, auth=current_auth, timeout=10)
                 response.raise_for_status()
                 feed_data = response.json()
                 
@@ -282,6 +283,8 @@ def analyze_odl_feed(
                         next_url = link.get("href")
                         break
                 
+                if next_url and "token=" in next_url:
+                    current_auth = None
                 current_url = next_url
                 
             except requests.RequestException as e:

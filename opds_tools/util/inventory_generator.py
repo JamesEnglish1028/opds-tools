@@ -141,7 +141,7 @@ def extract_inventory_record(publication, base_url=None):
         base_url: Base URL for resolving relative links
     
     Returns:
-        dict: Inventory record with identifier, title, author, publisher, format, drm
+        dict: Inventory record with identifier, title, author, publisher, format, drm, language, subject
     """
     metadata = publication.get('metadata', {})
     
@@ -157,6 +157,12 @@ def extract_inventory_record(publication, base_url=None):
     # Extract publisher
     publisher = extract_publisher(metadata)
     
+    # Extract language
+    language = extract_language(metadata)
+    
+    # Extract subject
+    subject = extract_subject(metadata)
+    
     # Extract format and DRM from links
     links = publication.get('links', [])
     format_str = extract_format_from_links(links)
@@ -167,6 +173,8 @@ def extract_inventory_record(publication, base_url=None):
         'title': title,
         'author': author,
         'publisher': publisher,
+        'language': language,
+        'subject': subject,
         'format': format_str,
         'drm': drm_str
     }
@@ -212,6 +220,46 @@ def extract_publisher(metadata):
             elif isinstance(p, str):
                 publishers.append(p)
         return ', '.join(publishers) if publishers else 'Unknown'
+    else:
+        return 'Unknown'
+
+
+def extract_language(metadata):
+    """Extract language from metadata."""
+    language = metadata.get('language')
+    
+    if isinstance(language, str):
+        return language if language else 'Unknown'
+    elif isinstance(language, list) and len(language) > 0:
+        # Return first language if list
+        return language[0] if isinstance(language[0], str) else 'Unknown'
+    else:
+        return 'Unknown'
+
+
+def extract_subject(metadata):
+    """Extract subject(s) from metadata."""
+    # Try multiple possible field names for subject
+    subjects = metadata.get('subject') or metadata.get('subjects')
+    
+    if not subjects:
+        return 'Unknown'
+    
+    if isinstance(subjects, str):
+        return subjects
+    elif isinstance(subjects, dict):
+        # Handle dict with 'name' or 'value' field
+        return subjects.get('name') or subjects.get('value', 'Unknown')
+    elif isinstance(subjects, list):
+        subject_list = []
+        for s in subjects:
+            if isinstance(s, str):
+                subject_list.append(s)
+            elif isinstance(s, dict):
+                name = s.get('name') or s.get('value', '')
+                if name:
+                    subject_list.append(name)
+        return ', '.join(subject_list) if subject_list else 'Unknown'
     else:
         return 'Unknown'
 
@@ -320,10 +368,13 @@ def calculate_inventory_stats(inventory):
         inventory: List of inventory records
     
     Returns:
-        dict: Statistics including format and DRM breakdowns
+        dict: Statistics including format, DRM, language, subject, and publisher breakdowns
     """
     format_counts = {}
     drm_counts = {}
+    language_counts = {}
+    subject_counts = {}
+    publisher_counts = {}
     
     for record in inventory:
         # Count formats
@@ -339,8 +390,32 @@ def calculate_inventory_stats(inventory):
             drm_counts[drm] += 1
         else:
             drm_counts[drm] = 1
+        
+        # Count languages
+        language = record.get('language', 'Unknown')
+        if language in language_counts:
+            language_counts[language] += 1
+        else:
+            language_counts[language] = 1
+        
+        # Count subjects (split by comma for multiple subjects)
+        subject = record.get('subject', 'Unknown')
+        if subject and subject != 'Unknown':
+            # Split if comma-separated
+            for subj in [s.strip() for s in subject.split(',')]:
+                if subj:
+                    subject_counts[subj] = subject_counts.get(subj, 0) + 1
+        else:
+            subject_counts['Unknown'] = subject_counts.get('Unknown', 0) + 1
+        
+        # Count publishers
+        publisher = record.get('publisher', 'Unknown')
+        if publisher in publisher_counts:
+            publisher_counts[publisher] += 1
+        else:
+            publisher_counts[publisher] = 1
     
-    # Sort by count
+    # Sort by count, descending
     format_stats = sorted(
         [{'type': k, 'count': v} for k, v in format_counts.items()],
         key=lambda x: x['count'],
@@ -353,11 +428,35 @@ def calculate_inventory_stats(inventory):
         reverse=True
     )
     
+    language_stats = sorted(
+        [{'type': k, 'count': v} for k, v in language_counts.items()],
+        key=lambda x: x['count'],
+        reverse=True
+    )
+    
+    subject_stats = sorted(
+        [{'type': k, 'count': v} for k, v in subject_counts.items()],
+        key=lambda x: x['count'],
+        reverse=True
+    )
+    
+    publisher_stats = sorted(
+        [{'type': k, 'count': v} for k, v in publisher_counts.items()],
+        key=lambda x: x['count'],
+        reverse=True
+    )
+    
     return {
         'format_counts': format_stats,
         'drm_counts': drm_stats,
+        'language_counts': language_stats,
+        'subject_counts': subject_stats,
+        'publisher_counts': publisher_stats,
         'unique_formats': len(format_counts),
-        'unique_drm_types': len(drm_counts)
+        'unique_drm_types': len(drm_counts),
+        'unique_languages': len(language_counts),
+        'unique_subjects': len(subject_counts),
+        'unique_publishers': len(publisher_counts)
     }
 
 
@@ -372,7 +471,7 @@ def generate_inventory_csv(inventory_data):
         str: CSV content
     """
     output = io.StringIO()
-    fieldnames = ['identifier', 'title', 'author', 'publisher', 'format', 'drm']
+    fieldnames = ['identifier', 'title', 'author', 'publisher', 'language', 'subject', 'format', 'drm']
     
     writer = csv.DictWriter(output, fieldnames=fieldnames, quoting=csv.QUOTE_MINIMAL)
     writer.writeheader()
@@ -402,7 +501,7 @@ def generate_inventory_xml(inventory_data):
         pub_elem = SubElement(root, 'publication')
         
         # Add child elements for each field
-        for field in ['identifier', 'title', 'author', 'publisher', 'format', 'drm']:
+        for field in ['identifier', 'title', 'author', 'publisher', 'language', 'subject', 'format', 'drm']:
             child = SubElement(pub_elem, field)
             child.text = str(record.get(field, ''))
     
@@ -435,7 +534,7 @@ def generate_inventory_excel(inventory_data):
     cell_alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
     
     # Column headers
-    headers = ['identifier', 'title', 'author', 'publisher', 'format', 'drm']
+    headers = ['identifier', 'title', 'author', 'publisher', 'language', 'subject', 'format', 'drm']
     
     # Write headers with styling
     for col_idx, header in enumerate(headers, start=1):
@@ -456,8 +555,10 @@ def generate_inventory_excel(inventory_data):
     ws.column_dimensions['B'].width = 40  # title
     ws.column_dimensions['C'].width = 25  # author
     ws.column_dimensions['D'].width = 25  # publisher
-    ws.column_dimensions['E'].width = 25  # format
-    ws.column_dimensions['F'].width = 25  # drm
+    ws.column_dimensions['E'].width = 15  # language
+    ws.column_dimensions['F'].width = 35  # subject
+    ws.column_dimensions['G'].width = 20  # format
+    ws.column_dimensions['H'].width = 20  # drm
     
     # Freeze the header row
     ws.freeze_panes = "A2"
